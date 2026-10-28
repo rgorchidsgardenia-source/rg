@@ -41,15 +41,24 @@ npm run dev
 
 Then open http://localhost:3000/landing-page/. Leads print in the terminal.
 
-## Connect Supabase (when the new account is ready)
+## Production setup
 
-1. In the new Supabase project, open **SQL Editor** and run `supabase/schema.sql`.
-2. In Vercel > Project > Settings > Environment Variables add:
-   - `SUPABASE_URL`: Project Settings > API > Project URL
-   - `SUPABASE_SERVICE_ROLE_KEY`: Project Settings > API > `service_role` key (server-only; never put it in the page)
-3. Redeploy. The API response changes from `"stored": false` to `"stored": true`.
+| Piece | Where |
+|---|---|
+| Code | https://github.com/rgorchidsgardenia-source/rg (`main` deploys to production on every push) |
+| Hosting + lead API | Vercel project `rgorchidsgardenia` (team `rg-4a5d`): https://rgorchidsgardenia.vercel.app/landing-page/ |
+| Leads database | Supabase project `wjuoykhvusqohfllejpq`, table `public.leads` |
 
-The browser never talks to Supabase directly; Row Level Security is on and only the server key can read or write.
+**Viewing leads:** Supabase dashboard > Table Editor > `leads` (newest first by `created_at`).
+Use the `status` column to track follow-up (`new`, `called`, `visit booked`, ...).
+
+**How leads are stored:** `/api/lead` inserts with the project's *publishable* key
+(Vercel env vars `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`). Row Level Security lets that key insert
+leads and nothing else: it cannot read, change or delete them, so no secret key lives in Vercel.
+The table also rejects invalid phone numbers on its own. The schema is in `supabase/schema.sql`.
+
+If Supabase is ever unreachable the API returns an error to the visitor (who sees the phone number) and
+writes the lead to the Vercel function logs, so nothing is lost.
 Optional: `LEAD_WEBHOOK_URL` also forwards each lead (Google Sheets via Apps Script, Zapier, a CRM, ...).
 
 ## Putting it on rgstructures.in/landing-page
