@@ -61,24 +61,25 @@ If Supabase is ever unreachable the API returns an error to the visitor (who see
 writes the lead to the Vercel function logs, so nothing is lost.
 Optional: `LEAD_WEBHOOK_URL` also forwards each lead (Google Sheets via Apps Script, Zapier, a CRM, ...).
 
-## Putting it on rgstructures.in/landing-page
+## Putting it on rgstructures.in/landingpage
 
-The site is WordPress on GoDaddy. Pick one:
+The site is WordPress on GoDaddy (LiteSpeed + cPanel). Use `/landingpage`: `/landing-page/` is already
+taken by an existing WordPress page. Pick one:
 
-**A. Upload the folder (recommended).** Upload the contents of `landing-page/` to
-`public_html/landing-page/` with cPanel File Manager or FTP. WordPress's `.htaccess` only rewrites URLs
-that are *not* real files or folders, so Apache serves this folder directly and WordPress is untouched.
-Then in `assets/js/config.js` set:
+**A. Upload the folder (recommended).** Build the package, then upload and extract it in `public_html`:
 
-```js
-apiBase: 'https://<your-vercel-project>.vercel.app',
-videoBase: 'https://<your-vercel-project>.vercel.app/landing-page/assets/video/',
+```bash
+node scripts/build-godaddy.mjs
 ```
 
-The form keeps posting to the Vercel API (rgstructures.in is already allowed by CORS), and the heavy
-videos keep streaming from Vercel's CDN instead of shared hosting, so you can skip uploading
-`assets/video/` except the three `*-poster.jpg` files. Make sure no WordPress page uses the slug `landing-page`.
-If the plan is GoDaddy *Managed WordPress* (no cPanel), use its SFTP access to upload to the site root.
+This writes `dist/rg-orchids-landingpage-godaddy.zip` (about 3 MB): the page with `config.js` pointing the
+form at `https://rgorchidsgardenia.vercel.app` and the videos at Vercel's CDN, so no video files go on
+shared hosting. In cPanel > File Manager > `public_html`, upload the zip and **Extract** it, which
+creates `public_html/landingpage/index.html`. LiteSpeed serves real folders directly, so WordPress is
+not touched; deleting the folder undoes it. If the old 404 is still shown, purge the LiteSpeed cache
+(WordPress admin > LiteSpeed Cache > Purge All).
+
+After that, content changes need a new zip (and leads/videos keep coming from Vercel).
 
 **B. Subdomain.** Add `offers.rgstructures.in` (or similar) as a domain in Vercel and create the CNAME it
 asks for in GoDaddy DNS. Nothing to upload, but the URL is a subdomain rather than `/landing-page`.

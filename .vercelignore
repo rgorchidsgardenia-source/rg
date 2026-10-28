@@ -2,3 +2,4 @@ dev-server.mjs
 README.md
 supabase/
 .env.example
+scripts/
