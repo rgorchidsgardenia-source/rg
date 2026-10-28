@@ -14,7 +14,7 @@ window.RG_CONFIG = {
   videoBase: 'assets/video/',
 
   // Headline numbers used everywhere on the page ([data-price], [data-size]).
-  price: '₹2.79 Cr',
+  price: '₹2.99 Cr',
   size: '1,860 – 2,890 sq.ft',
 
   // Lead popup: first appears after firstDelay ms, then re-appears a random
