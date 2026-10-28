@@ -1,8 +1,8 @@
 // POST /api/lead: receives enquiries from the landing page.
 //
 // Storage:
-//   - If SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set, the lead is
-//     inserted into the `leads` table (see supabase/schema.sql).
+//   - If SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (or SUPABASE_SERVICE_ROLE_KEY)
+//     are set, the lead is inserted into the `leads` table (see supabase/schema.sql).
 //   - Otherwise the function runs in log-only mode: the lead is written to
 //     the Vercel function logs and the visitor still gets a success response.
 //
@@ -80,16 +80,14 @@ function rateLimited(ip) {
 
 async function saveToSupabase(row) {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // The publishable key is enough: RLS lets it insert leads and nothing else.
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return false;
+  const headers = { apikey: key, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
+  if (key.split('.').length === 3) headers.Authorization = `Bearer ${key}`; // legacy JWT keys
   const r = await fetch(`${url.replace(/\/$/, '')}/rest/v1/leads`, {
     method: 'POST',
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal'
-    },
+    headers,
     body: JSON.stringify(row)
   });
   if (!r.ok) throw new Error(`Supabase insert failed: ${r.status} ${await r.text()}`);
