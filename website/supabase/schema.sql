@@ -252,3 +252,8 @@ begin
 end $$;
 revoke all on function public.admin_dashboard(timestamptz, timestamptz) from public, anon;
 grant execute on function public.admin_dashboard(timestamptz, timestamptz) to authenticated;
+
+-- ---------- Later migration "site_settings_and_repeat_leads" ----------
+-- public.site_settings (key, value jsonb): public read, admin insert/update, stamped with who changed it.
+-- enquiries.is_repeat / leads.is_repeat: set by trigger flag_repeat_lead() when the phone enquired in the last 180 days.
+-- public.inbox gained the is_repeat column. See the Supabase migration history for the exact SQL.

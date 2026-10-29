@@ -24,12 +24,25 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const projects = JSON.parse(read(join(src, 'data', 'projects.json')));
 const testimonials = JSON.parse(read(join(src, 'data', 'testimonials.json')));
 
+// Site settings: defaults from src/data/site.json, overridden by what admins saved in /admin
+// (Supabase public.site_settings) when the build has the Supabase env vars. The browser also
+// fetches /api/settings, so admin changes show up before the next deploy.
+const settings = JSON.parse(read(join(src, 'data', 'site.json')));
+if (process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
+  try {
+    const r = await fetch(`${process.env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/site_settings?select=key,value`, { headers: { apikey: process.env.SUPABASE_PUBLISHABLE_KEY } });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    for (const row of await r.json()) if (row.key in settings) settings[row.key] = row.value;
+  } catch (err) { console.warn('Could not read site settings:', err.message); }
+}
+const withSettings = (text) => text.replace(/\{\{s\.(\w+)\}\}/g, (_, k) => String(settings[k] ?? ''));
+
 function hashOf(files) {
   const h = createHash('sha1');
   for (const f of files) h.update(read(join(src, f)));
   return h.digest('hex').slice(0, 10);
 }
-const version = hashOf(['assets/css/site.css', 'assets/js/site.js']);
+const version = hashOf(['assets/css/site.css', 'assets/css/premium.css', 'assets/js/site.js']);
 
 const icon = (name, cls = '') => `<svg class="${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 
@@ -40,12 +53,14 @@ function projectCard(p) {
     ? `<a class="pcard__cover" href="${p.url}" aria-label="View ${esc(p.name)}"></a>`
     : '';
   const more = p.url ? `<div class="pcard__more"><span class="link-arrow">View project ${icon('arrow')}</span></div>` : '';
+  const go = p.url ? `<span class="pcard__go">${icon('arrow')}</span>` : '';
   return `<article class="pcard reveal">
   ${link}
   <div class="pcard__media">
     <img src="/assets/img/projects/${p.image}" alt="${esc(p.name)}" width="900" height="506" loading="lazy" decoding="async">
     <span class="pcard__badge pcard__badge--${p.status}">${badge}</span>
     ${p.soldOut ? '<span class="pcard__sold">Sold Out</span>' : ''}
+    ${go}
   </div>
   <div class="pcard__body">
     <h3 class="pcard__title">${esc(p.name)}</h3>
@@ -68,7 +83,7 @@ const helpers = {
   <div class="projects">${list.map(projectCard).join('\n')}</div>
 </div>`;
     }).join('\n');
-    const Tag = page.path === '/project/' ? 'h1' : 'h2';
+    const Tag = 'h2';
     return `<div class="tabs-row reveal"><${Tag} class="h2">Our Projects</${Tag}><div class="tabs" role="tablist" aria-label="Filter projects" data-tabs>${btns}</div></div>\n${panels}`;
   },
   project(slug) {
@@ -121,8 +136,8 @@ const defaults = {
   logo: 'rg',
   description: 'RG Unique Structures, established in 2006, is a Bangalore real estate developer with two decades of expertise, delivering 40+ projects spanning 30+ lakh sq. ft.',
   image: '/assets/img/home/hero-1.webp',
-  band: { kicker: 'Villomes', title: 'Starting at ₹2.99 CR', project: 'RG Orchids Gardenia' },
-  popup: { kicker: 'Request a call back', title: 'Villomes', price: 'RG Orchids Gardenia · Starting at ₹2.99 CR', project: 'RG Orchids Gardenia' },
+  band: { kicker: 'Villomes', title: `Starting at ${settings.price}`, project: 'RG Orchids Gardenia' },
+  popup: { kicker: 'Request a call back', title: settings.popup_title, price: `RG Orchids Gardenia · Starting at ${settings.price}`, project: 'RG Orchids Gardenia' },
   autoPopup: true,
   section: '',
   extraHead: ''
@@ -142,17 +157,18 @@ for (const file of readdirSync(join(src, 'pages')).filter((f) => f.endsWith('.ht
   const raw = read(join(src, 'pages', file));
   const m = raw.match(/^<!--(\{[\s\S]*?\})-->\s*/);
   if (!m) throw new Error(`${file}: missing settings comment`);
-  const meta = JSON.parse(m[1]);
+  const meta = JSON.parse(withSettings(m[1]));
   const page = {
     ...defaults, ...meta,
     band: { ...defaults.band, ...(meta.band || {}) },
     popup: { ...defaults.popup, ...(meta.popup || {}) },
-    v: version, site: SITE
+    v: version, site: SITE, s: settings
   };
+  page.sJson = JSON.stringify(settings).replace(/</g, '\\u003c');
   page.canonical = SITE + page.path;
   page.autoAttr = page.autoPopup ? ' data-auto' : '';
   page.logoHtml = page.logo === 'gardenia'
-    ? '<a class="header__logo header__logo--gardenia" href="/" aria-label="RG Unique Structures home"><img src="/assets/img/brand/gardenia-logo.webp" alt="RG Orchids Gardenia" width="640" height="265"></a>'
+    ? '<a class="header__logo header__logo--gardenia header__logo--swap" href="/" aria-label="RG Unique Structures home"><img class="logo-dark" src="/assets/img/brand/gardenia-logo.webp" alt="RG Orchids Gardenia" width="640" height="265"><img class="logo-light" src="/assets/img/brand/gardenia-logo-white.svg" alt="" width="191" height="64"></a>'
     : '<a class="header__logo" href="/" aria-label="RG Unique Structures home"><img src="/assets/img/brand/rg-logo.webp" alt="RG Unique Structures" width="520" height="350"></a>';
   page.content = render(raw.slice(m[0].length), page);
   const html = render(layout, page);

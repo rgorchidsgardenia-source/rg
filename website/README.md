@@ -1,7 +1,8 @@
 # RG Unique Structures: website
 
-A hand-coded rebuild of rgstructures.in (previously WordPress + Elementor), with every page, label and
-image carried over, plus a lead backend and an admin dashboard.
+A hand-coded rebuild of rgstructures.in (previously WordPress + Elementor): every page, label and image
+carried over, redesigned with a cinematic video hero, word-by-word headline reveals, parallax, a scroll-lit
+philosophy statement, smooth (Lenis) scrolling, page-to-page fades, and a lead backend with an admin dashboard.
 
 | Piece | Where |
 |---|---|
@@ -56,7 +57,15 @@ The popup opens once per visit after 9 seconds (and from every "Request Call Bac
   Landing page leads appear here too.
 - **Website analytics**: visitors, page views, top pages, referrers, devices, campaigns, and taps on call,
   WhatsApp, directions, popup opens and form submits.
+- **Pipeline**: drag-and-drop board (New → Contacted → Follow-up → Site visit → Negotiation → Booked → Closed).
+- **Site settings**: phone numbers, WhatsApp, email, the Gardenia starting price, the timed popup (on/off,
+  delay, heading) and an announcement bar across the top of every page. Saved settings reach visitors within
+  about a minute through `/api/settings` (no redeploy), and the next deploy bakes them into the HTML.
+- **Repeat leads** are flagged automatically when the same phone number enquired in the last 180 days.
 - **Team**: add or remove admins.
+
+Spam protection: hidden honeypot field, per-IP rate limit, database checks on every field, and forms
+report whether a person interacted with them (scripted posts are dropped and only logged).
 
 Access: a person needs a confirmed Supabase Auth login **and** their email in `public.admin_users`.
 Add the first admin in Supabase (Table Editor > `admin_users` > insert their email in lower case); after that,
@@ -68,6 +77,12 @@ Supabase settings to check (Authentication > URL Configuration): set the Site UR
 confirmation and password-reset links land on the admin page. Supabase's built-in email service only sends a
 few emails an hour (and only to project team members); add custom SMTP (Authentication > Emails) before
 inviting several staff.
+
+## Films
+
+The RG Orchids Gardenia page plays the project film and model-flat walkthrough from the landing page project
+(`rgorchidsgardenia.vercel.app/landing-page/assets/video/`, 1080p on desktop, 720p on phones). The home hero
+loop lives in `src/assets/video/`.
 
 ## Images
 

@@ -50,9 +50,11 @@
     <nav class="side__nav" aria-label="Admin">
       <a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/></svg>Dashboard</a>
       <a href="#leads" data-view="leads"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H5.2L4 17.2zM8 9h8M8 12h5"/></svg>All leads<span class="pill" id="newCount" hidden></span></a>
+      <a href="#pipeline" data-view="pipeline"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v6h-4z"/></svg>Pipeline</a>
       <a href="#partners" data-view="partners"><svg viewBox="0 0 24 24"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0 0-6M22 20a6 6 0 0 0-5-5.9"/></svg>Channel partners</a>
       <a href="#careers" data-view="careers"><svg viewBox="0 0 24 24"><path d="M3 7h18v13H3zM8 7V4h8v3M3 12h18"/></svg>Careers</a>
       <a href="#analytics" data-view="analytics"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16V9M11 16V5M16 16v-4M21 16V8"/></svg>Website analytics</a>
+      <a href="#settings" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Site settings</a>
       <a href="#team" data-view="team"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg>Team</a>
     </nav>
     <div class="side__foot">
@@ -137,6 +139,42 @@
         <div class="card"><div class="card__head"><h2>Devices</h2></div><div id="devices" class="bars"></div></div>
         <div class="card"><div class="card__head"><h2>Campaigns (utm_campaign)</h2></div><div id="campaigns" class="bars"></div></div>
       </div>
+    </section>
+
+    <!-- Pipeline board -->
+    <section class="view" id="view-pipeline" hidden>
+      <p class="muted small" style="margin:0 0 12px">Drag a card to another column to move the lead along. Click a card for details. Shows leads from the selected period.</p>
+      <div class="board" id="board"></div>
+    </section>
+
+    <!-- Site settings -->
+    <section class="view" id="view-settings" hidden>
+      <form class="grid" id="settingsForm">
+        <div class="card">
+          <div class="card__head"><h2>Contact details</h2></div>
+          <label class="fld"><span>Phone (as shown)</span><input name="phone" maxlength="30" required></label>
+          <label class="fld"><span>Phone for calls (with +91)</span><input name="phone_tel" maxlength="20" pattern="\+?[0-9]{10,15}" required></label>
+          <label class="fld"><span>WhatsApp number (country code, digits only)</span><input name="whatsapp" maxlength="15" pattern="[0-9]{10,15}" required></label>
+          <label class="fld"><span>Email</span><input name="email" type="email" maxlength="120" required></label>
+        </div>
+        <div class="card">
+          <div class="card__head"><h2>RG Orchids Gardenia</h2></div>
+          <label class="fld"><span>Starting price (as shown everywhere)</span><input name="price" maxlength="30" required></label>
+          <div class="card__head" style="margin-top:18px"><h2>Popup</h2></div>
+          <label class="chk" style="margin-bottom:12px"><input type="checkbox" name="popup_enabled"> Open the enquiry popup automatically</label>
+          <label class="fld"><span>Seconds before it opens (3 - 120)</span><input name="popup_delay" type="number" min="3" max="120" required></label>
+          <label class="fld"><span>Popup heading</span><input name="popup_title" maxlength="40" required></label>
+        </div>
+        <div class="card card--wide">
+          <div class="card__head"><h2>Announcement bar</h2><span class="muted small">Shown at the very top of every page. Leave empty to hide.</span></div>
+          <label class="fld"><span>Message</span><input name="announcement" maxlength="140" placeholder="e.g. Site visits open this weekend, 10 am to 6 pm"></label>
+          <label class="fld"><span>Link (optional, e.g. /rg-orchid-gardenia/)</span><input name="announcement_link" maxlength="200"></label>
+        </div>
+        <div class="card card--wide" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <span class="muted small" id="settingsMeta"></span>
+          <button class="btn" type="submit">Save settings</button>
+        </div>
+      </form>
     </section>
 
     <!-- Team -->

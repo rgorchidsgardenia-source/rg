@@ -19,22 +19,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Text&family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/css/site.css?v={{v}}">
-<script>document.documentElement.classList.add('js')</script>
+<link rel="stylesheet" href="/assets/css/premium.css?v={{v}}">
+<script>document.documentElement.classList.add('js');try{if(!sessionStorage.getItem('rg_seen')){document.documentElement.classList.add('first-visit');sessionStorage.setItem('rg_seen','1')}}catch(e){}window.__S={{sJson}};</script>
 {{extraHead}}
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"RealEstateAgent","name":"RG Unique Structures Pvt Ltd","url":"https://rgstructures.in/","logo":"https://rgstructures.in/assets/img/brand/rg-logo.webp","telephone":"+91-9988996506","email":"info@rgstructures.in","foundingDate":"2006","address":{"@type":"PostalAddress","streetAddress":"#1087, 4th Floor, 1st Stage, 5th Block HBR Layout, Nagawara Junction","addressLocality":"Bangalore","postalCode":"560045","addressRegion":"Karnataka","addressCountry":"IN"},"sameAs":["https://www.instagram.com/rguniquestructures","https://www.facebook.com/rguniquestructures","https://www.linkedin.com/company/rguniquestructures"]}</script>
 </head>
 <body>
+<div class="curtain" aria-hidden="true"><img src="/assets/img/brand/rg-logo.webp" alt="" width="520" height="350"></div>
 {{> icons}}
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="header">
+  <div class="announce" id="announce"></div>
   <div class="wrap header__in">
     <button class="burger" type="button" aria-label="Open menu" aria-controls="drawer" aria-expanded="false"><span></span></button>
     {{logoHtml}}
     <nav class="nav" aria-label="Main">{{@nav}}</nav>
-    <a class="btn btn--sm header__cta" href="https://wa.me/919988996506" target="_blank" rel="noopener" data-label="header">{{@icon whatsapp}}99 88 99 6506</a>
-    <a class="header__call" href="tel:+919988996506" aria-label="Call 99 88 99 6506">{{@icon phone}}</a>
+    <a class="btn btn--sm header__cta" href="https://wa.me/{{s.whatsapp}}" target="_blank" rel="noopener" data-label="header">{{@icon whatsapp}}{{s.phone}}</a>
+    <a class="header__call" href="tel:{{s.phone_tel}}" aria-label="Call {{s.phone}}">{{@icon phone}}</a>
   </div>
+  <span class="progress" aria-hidden="true"></span>
 </header>
 
 <div class="drawer" id="drawer" aria-hidden="true">
@@ -47,7 +51,7 @@
     <nav aria-label="Mobile">{{@nav}}</nav>
     <div class="drawer__foot">
       <button class="btn btn--block" type="button" data-popup="menu">Request a Call Back</button>
-      <a class="btn btn--ghost btn--block" href="https://wa.me/919988996506" target="_blank" rel="noopener" data-label="menu">{{@icon whatsapp}}99 88 99 6506</a>
+      <a class="btn btn--ghost btn--block" href="https://wa.me/{{s.whatsapp}}" target="_blank" rel="noopener" data-label="menu">{{@icon whatsapp}}{{s.phone}}</a>
     </div>
   </div>
 </div>
@@ -61,41 +65,64 @@
 <div class="wrap rep">
   <div class="rep__pill reveal">
     <h2>Speak to our Representative Today</h2>
-    <a href="tel:+919988996506">{{@icon phone}}99 88 99 6506</a>
-    <a href="mailto:info@rgstructures.in">{{@icon mail}}info@rgstructures.in</a>
+    <a href="tel:{{s.phone_tel}}">{{@icon phone}}{{s.phone}}</a>
+    <a href="mailto:{{s.email}}">{{@icon mail}}{{s.email}}</a>
   </div>
 </div>
 
 <footer class="footer">
   <div class="wrap">
-    <div class="footer__top">
-      <a class="footer__logo" href="/" aria-label="RG Unique Structures home"><img src="/assets/img/brand/rg-logo.webp" alt="RG Unique Structures" width="520" height="350" loading="lazy"></a>
-      <nav class="footer__links" aria-label="Footer">
-        <a href="/project/">Projects</a>
-        <a href="/about-us/">About Us</a>
-        <a href="/channel-partner/">Channel Partner</a>
-        <a href="/careers/">Careers</a>
-        <a href="/terms-and-conditions/">Terms &amp; Conditions</a>
-        <a href="/contact-us/">Contact</a>
+    <div class="footer__cols">
+      <div class="footer__brand">
+        <a href="/" aria-label="RG Unique Structures home"><img src="/assets/img/brand/rg-logo.webp" alt="RG Unique Structures" width="520" height="350" loading="lazy"></a>
+        <p>Crafting timeless structures in Bangalore since 2006: 40+ projects and 30+ lakh sq. ft. delivered.</p>
+        <div class="socials">
+          <a href="https://www.instagram.com/rguniquestructures" target="_blank" rel="noopener" aria-label="Instagram">{{@icon instagram}}</a>
+          <a href="https://www.facebook.com/rguniquestructures" target="_blank" rel="noopener" aria-label="Facebook">{{@icon facebook}}</a>
+          <a href="https://www.linkedin.com/company/rguniquestructures" target="_blank" rel="noopener" aria-label="LinkedIn">{{@icon linkedin}}</a>
+        </div>
+      </div>
+      <nav aria-label="Company">
+        <h3>Company</h3>
+        <ul>
+          <li><a href="/about-us/">About Us</a></li>
+          <li><a href="/project/">Projects</a></li>
+          <li><a href="/channel-partner/">Channel Partner</a></li>
+          <li><a href="/careers/">Careers</a></li>
+          <li><a href="/contact-us/">Contact</a></li>
+        </ul>
       </nav>
-      <div class="socials">
-        <a href="https://www.instagram.com/rguniquestructures" target="_blank" rel="noopener" aria-label="Instagram">{{@icon instagram}}</a>
-        <a href="https://www.facebook.com/rguniquestructures" target="_blank" rel="noopener" aria-label="Facebook">{{@icon facebook}}</a>
-        <a href="https://www.linkedin.com/company/rguniquestructures" target="_blank" rel="noopener" aria-label="LinkedIn">{{@icon linkedin}}</a>
+      <nav aria-label="Projects">
+        <h3>Projects</h3>
+        <ul>
+          <li><a href="/rg-orchid-gardenia/">RG Orchids Gardenia</a></li>
+          <li><a href="/a-k-maple/">A K Maple</a></li>
+          <li><a href="/project/">All projects</a></li>
+          <li><a href="/existing-channel-partner/">CP lead registration</a></li>
+        </ul>
+      </nav>
+      <div>
+        <h3>Corporate Office</h3>
+        <ul class="footer__contact">
+          <li>{{@icon pin}}<span>#1087, 4th Floor, 1st Stage, 5th Block HBR Layout, Nagawara Junction, Bangalore 560045</span></li>
+          <li>{{@icon phone}}<a href="tel:{{s.phone_tel}}">{{s.phone}}</a></li>
+          <li>{{@icon mail}}<a href="mailto:{{s.email}}">{{s.email}}</a></li>
+        </ul>
       </div>
     </div>
     <div class="footer__bottom">
       <span>Copyright © 2010-<span data-year>2026</span> RG UNIQUE STRUCTURES PVT LTD. All rights reserved.</span>
       <span><a href="/privacy-policy/">Privacy Policy</a> · <a href="/terms-and-conditions/">Terms &amp; Conditions</a></span>
     </div>
+    <div class="footer__word" aria-hidden="true">RG Unique Structures</div>
   </div>
 </footer>
 
-<div class="fab"><a class="fab__wa" href="https://wa.me/919988996506" target="_blank" rel="noopener" aria-label="Chat on WhatsApp" data-label="float">{{@icon whatsapp}}</a></div>
+<div class="fab"><a class="fab__wa" href="https://wa.me/{{s.whatsapp}}" target="_blank" rel="noopener" aria-label="Chat on WhatsApp" data-label="float">{{@icon whatsapp}}</a></div>
 <button class="to-top" type="button" aria-label="Back to top">{{@icon up}}</button>
 <nav class="mbar" aria-label="Quick contact">
-  <a class="mbar__call" href="tel:+919988996506">{{@icon phone}}Call</a>
-  <a class="mbar__wa" href="https://wa.me/919988996506" target="_blank" rel="noopener" data-label="mobile bar">{{@icon whatsapp}}WhatsApp</a>
+  <a class="mbar__call" href="tel:{{s.phone_tel}}">{{@icon phone}}Call</a>
+  <a class="mbar__wa" href="https://wa.me/{{s.whatsapp}}" target="_blank" rel="noopener" data-label="mobile bar">{{@icon whatsapp}}WhatsApp</a>
   <button class="mbar__enq" type="button" data-popup="mobile bar">Enquire Now</button>
 </nav>
 
@@ -129,6 +156,14 @@
     <button class="round-btn lightbox__nav lightbox__prev" type="button" aria-label="Previous image" data-lb-prev>{{@icon left}}</button>
     <button class="round-btn lightbox__nav lightbox__next" type="button" aria-label="Next image" data-lb-next>{{@icon right}}</button>
     <p class="lightbox__cap"></p>
+  </div>
+</div>
+
+<div class="modal video-modal" id="videoModal" aria-hidden="true">
+  <div class="modal__scrim" data-close></div>
+  <div class="modal__box" role="dialog" aria-modal="true" aria-label="Video player">
+    <button class="modal__close" type="button" aria-label="Close" data-close>{{@icon close}}</button>
+    <video controls playsinline preload="none"></video>
   </div>
 </div>
 

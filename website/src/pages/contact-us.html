@@ -1,4 +1,4 @@
-<!--{"title": "Contact Us | RG Unique Structures", "path": "/contact-us/", "description": "Visit RG Unique Structures at #1087, 4th Floor, 1st Stage, 5th Block HBR Layout, Nagawara Junction, Bangalore 560045, or call 99 88 99 6506.", "noBand": true, "popup": {"project": "General"}}-->
+<!--{"title": "Contact Us | RG Unique Structures", "path": "/contact-us/", "description": "Visit RG Unique Structures at #1087, 4th Floor, 1st Stage, 5th Block HBR Layout, Nagawara Junction, Bangalore 560045, or call {{s.phone}}.", "noBand": true, "popup": {"project": "General"}}-->
 <section class="page-hero">
   <div class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Contact Us</span></nav>
@@ -13,8 +13,8 @@
       <h2 class="h2">Corporate Office</h2>
       <div class="contact-list" style="margin-top:26px">
         <div>{{@icon pin}}<span><strong>Address:</strong><br># 1087 4th Floor, 1st stage,<br>5th Block HBR Layout, Nagawara Junction<br>Bangalore -560045</span></div>
-        <a href="tel:+919988996506">{{@icon phone}}<span>99 88 99 6506</span></a>
-        <a href="mailto:info@rgstructures.in">{{@icon mail}}<span>info@rgstructures.in</span></a>
+        <a href="tel:{{s.phone_tel}}">{{@icon phone}}<span>{{s.phone}}</span></a>
+        <a href="mailto:{{s.email}}">{{@icon mail}}<span>{{s.email}}</span></a>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:28px">
         <a class="btn" href="https://www.google.com/maps/search/?api=1&amp;query=RG+Unique+Structures+Pvt+Ltd+HBR+Layout+Nagawara+Bangalore" target="_blank" rel="noopener" data-label="contact page">{{@icon directions}}Get Directions</a>
@@ -22,7 +22,7 @@
       <div class="tile" style="margin-top:28px">
         <p style="margin:0 0 6px;font-weight:600;color:var(--plum)">Need Help with Direction?</p>
         <p style="margin:0 0 10px">Contact on-site Representative</p>
-        <a class="link-arrow" href="tel:+919988996506">{{@icon phone}}99 88 99 6506</a>
+        <a class="link-arrow" href="tel:{{s.phone_tel}}">{{@icon phone}}{{s.phone}}</a>
       </div>
     </div>
     <div class="map-frame reveal-img">

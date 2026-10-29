@@ -132,7 +132,7 @@
   }
 
   /* ---------- app shell ---------- */
-  var VIEWS = { dashboard: 'Dashboard', leads: 'All leads', partners: 'Channel partners', careers: 'Careers', analytics: 'Website analytics', team: 'Team' };
+  var VIEWS = { dashboard: 'Dashboard', leads: 'All leads', pipeline: 'Pipeline', partners: 'Channel partners', careers: 'Careers', analytics: 'Website analytics', settings: 'Site settings', team: 'Team' };
   function route() {
     var v = (location.hash || '#dashboard').slice(1);
     if (!VIEWS[v]) v = 'dashboard';
@@ -142,7 +142,7 @@
     var panel = v === 'partners' || v === 'careers' ? 'leads' : v;
     $$('.view').forEach(function (s) { s.hidden = s.id !== 'view-' + panel; });
     $('#app').classList.remove('nav-open');
-    $('#range').hidden = v === 'team';
+    $('#range').hidden = v === 'team' || v === 'settings';
     if (panel === 'leads') {
       var typeSel = $('#fType');
       typeSel.hidden = v !== 'leads';
@@ -155,6 +155,8 @@
     if (state.view === 'dashboard') return loadDashboard();
     if (state.view === 'analytics') return loadDashboard();
     if (state.view === 'team') return loadTeam();
+    if (state.view === 'pipeline') return loadBoard();
+    if (state.view === 'settings') return loadSettings();
     return loadLeads();
   }
 
@@ -175,6 +177,7 @@
     $('#exportBtn').addEventListener('click', exportCsv);
     $$('[data-filter-followup]').forEach(function (a) { a.addEventListener('click', function () { $('#fDue').checked = true; }); });
     $('#addAdmin').addEventListener('submit', addAdmin);
+    $('#settingsForm').addEventListener('submit', saveSettings);
     route();
     pollNew();
     setInterval(pollNew, 60000);
@@ -309,7 +312,7 @@
       if (!res.data.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">No leads match these filters</td></tr>'; return; }
       tb.innerHTML = res.data.map(function (r) {
         var due = r.follow_up_at ? '<span class="' + (new Date(r.follow_up_at) < new Date() && ['booked', 'closed', 'junk'].indexOf(r.status) < 0 ? 'overdue' : '') + '">' + fmtDate(r.follow_up_at) + '</span>' : '<span class="muted">–</span>';
-        var who = r.type === 'cp_lead' ? esc(r.name) + ' <span class="muted small">via ' + esc(r.partner_name) + '</span>' : esc(r.name);
+        var who = (r.type === 'cp_lead' ? esc(r.name) + ' <span class="muted small">via ' + esc(r.partner_name) + '</span>' : esc(r.name)) + (r.is_repeat ? '<span class="repeat" title="This phone number enquired before">Repeat</span>' : '');
         return '<tr data-id="' + r.id + '" class="' + (r.status === 'new' ? 'is-new' : '') + '"><td title="' + esc(new Date(r.created_at).toLocaleString('en-IN', tz)) + '">' + ago(r.created_at) + '</td><td>' + who + '</td><td>' + esc(r.phone) + '</td><td>' + esc(TYPES[r.type] || r.type) + '</td><td>' + esc(r.type === 'career' ? r.position : r.project) + '</td><td>' + esc(channel(r)) + '</td><td>' + badge(r.status) + '</td><td>' + due + '</td></tr>';
       }).join('');
       $$('tr[data-id]', tb).forEach(function (tr) {
@@ -356,7 +359,7 @@
   function openLead(r) {
     if (!r) return;
     state.current = r;
-    $('#dTitle').textContent = r.name;
+    $('#dTitle').innerHTML = esc(r.name) + (r.is_repeat ? '<span class="repeat" title="This phone number enquired in the last 180 days">Repeat</span>' : '');
     $('#dSub').textContent = (TYPES[r.type] || r.type) + ' · received ' + new Date(r.created_at).toLocaleString('en-IN', Object.assign({ dateStyle: 'medium', timeStyle: 'short' }, tz)) + ' · ' + channel(r);
     var ph = digits(r.phone); var wa = ph.length === 10 ? '91' + ph : ph;
     $('#dQuick').innerHTML = '<a class="btn btn--sm" href="tel:+91' + esc(ph) + '">Call ' + esc(r.phone) + '</a>' +
@@ -410,7 +413,7 @@
       return Promise.all(log.map(function (l) { return logActivity(l[0], l[1]); }));
     }).then(function () {
       toast('Saved'); loadTimeline(); pollNew();
-      if (state.view === 'dashboard') loadDashboard(); else if (state.view !== 'analytics' && state.view !== 'team') loadLeads();
+      if (state.view === 'dashboard') loadDashboard(); else if (state.view === 'pipeline') loadBoard(); else if (state.view !== 'analytics' && state.view !== 'team') loadLeads();
     }).catch(fail).then(function () { btn.disabled = false; });
   });
 
@@ -431,6 +434,73 @@
       closeDrawer(); toast('Lead deleted'); load(); pollNew();
     }).catch(fail);
   });
+
+  /* ---------- pipeline board ---------- */
+  var BOARD = ['new', 'contacted', 'follow_up', 'site_visit', 'negotiation', 'booked', 'closed'];
+  function loadBoard() {
+    sb.from('inbox').select('*').gte('created_at', rangeFrom()).neq('status', 'junk').order('created_at', { ascending: false }).limit(500).then(function (res) {
+      if (res.error) throw res.error;
+      var rows = res.data; var board = $('#board');
+      board.innerHTML = BOARD.map(function (st) {
+        var list = rows.filter(function (r) { return r.status === st; });
+        return '<div class="col" data-status="' + st + '"><div class="col__head">' + esc(statusLabel(st)) + '<span>' + list.length + '</span></div>' +
+          list.map(function (r) {
+            return '<div class="kcard" draggable="true" data-id="' + r.id + '"><b>' + esc(r.name) + (r.is_repeat ? '<span class="repeat">Repeat</span>' : '') + '</b><div class="muted">' + esc(r.phone) + ' · ' + esc(TYPES[r.type] || r.type) + '</div><div class="muted">' + esc(r.project || '') + (r.follow_up_at ? ' · follow-up ' + fmtDate(r.follow_up_at) : '') + '</div></div>';
+          }).join('') + '</div>';
+      }).join('');
+      $$('.kcard', board).forEach(function (c) {
+        var r = rows.find(function (x) { return x.id === c.dataset.id; });
+        c.addEventListener('click', function () { openLead(r); });
+        c.addEventListener('dragstart', function (e) { e.dataTransfer.setData('text/plain', r.id); c.classList.add('is-dragging'); });
+        c.addEventListener('dragend', function () { c.classList.remove('is-dragging'); });
+      });
+      $$('.col', board).forEach(function (col) {
+        col.addEventListener('dragover', function (e) { e.preventDefault(); col.classList.add('is-over'); });
+        col.addEventListener('dragleave', function () { col.classList.remove('is-over'); });
+        col.addEventListener('drop', function (e) {
+          e.preventDefault(); col.classList.remove('is-over');
+          var r = rows.find(function (x) { return x.id === e.dataTransfer.getData('text/plain'); });
+          var to = col.dataset.status;
+          if (!r || r.status === to) return;
+          var from = r.status;
+          sb.from(tableFor(r)).update({ status: to }).eq('id', r.id).then(function (u) {
+            if (u.error) throw u.error;
+            state.current = r; r.status = to;
+            return logActivity('status', 'Status: ' + statusLabel(from) + ' → ' + statusLabel(to));
+          }).then(function () { toast(r.name + ' moved to ' + statusLabel(to)); loadBoard(); pollNew(); }).catch(fail);
+        });
+      });
+    }).catch(fail);
+  }
+
+  /* ---------- site settings ---------- */
+  function loadSettings() {
+    sb.from('site_settings').select('*').then(function (res) {
+      if (res.error) throw res.error;
+      var f = $('#settingsForm'); var latest = null;
+      res.data.forEach(function (row) {
+        var el = f.elements[row.key]; if (!el) return;
+        if (el.type === 'checkbox') el.checked = row.value === true; else el.value = row.value == null ? '' : row.value;
+        if (!latest || row.updated_at > latest.updated_at) latest = row;
+      });
+      $('#settingsMeta').textContent = latest ? 'Last changed ' + new Date(latest.updated_at).toLocaleString('en-IN', Object.assign({ dateStyle: 'medium', timeStyle: 'short' }, tz)) + (latest.updated_by ? ' by ' + latest.updated_by : '') + '. Changes appear on the website within about a minute.' : '';
+    }).catch(fail);
+  }
+  function saveSettings(e) {
+    e.preventDefault();
+    var f = e.target;
+    if (!f.reportValidity()) return;
+    var link = f.announcement_link.value.trim();
+    if (link && !/^(https?:\/\/|\/)/.test(link)) { toast('The link must start with / or https://'); return; }
+    var rows = ['phone', 'phone_tel', 'whatsapp', 'email', 'price', 'popup_title', 'announcement', 'announcement_link'].map(function (k) { return { key: k, value: f.elements[k].value.trim() }; });
+    rows.push({ key: 'popup_enabled', value: f.popup_enabled.checked });
+    rows.push({ key: 'popup_delay', value: Math.max(3, Math.min(120, Number(f.popup_delay.value) || 9)) });
+    var btn = $('button[type=submit]', f); btn.disabled = true;
+    sb.from('site_settings').upsert(rows).then(function (res) {
+      if (res.error) throw res.error;
+      toast('Settings saved. The website updates within a minute.'); loadSettings();
+    }).catch(fail).then(function () { btn.disabled = false; });
+  }
 
   /* ---------- team ---------- */
   function loadTeam() {

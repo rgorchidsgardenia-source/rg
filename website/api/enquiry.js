@@ -40,6 +40,11 @@ module.exports = async function handler(req, res) {
 
   // Honeypot: bots fill the hidden "company" field. Pretend success.
   if (body.company) return res.status(200).json({ ok: true });
+  // Our forms report whether anyone touched, clicked or typed in them; scripted posts never do.
+  if (body.human === false) {
+    console.warn('[enquiry] dropped: form submitted without any interaction', JSON.stringify(pick(body, { name: 80, phone: 20, form_id: 60 })));
+    return res.status(200).json({ ok: true });
+  }
 
   const e = pick(body, FIELDS);
   e.phone = e.phone.replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');
