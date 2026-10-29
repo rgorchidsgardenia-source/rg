@@ -1,0 +1,18 @@
+{
+  "home": [
+    { "family": "Sharma Family", "city": "Bangalore", "image": "t-sharma.webp", "name": "Rajesh Sharma, Resident since 2023",
+      "quote": "The sense of luxury and space in our SLV Infrastructures home is unmatched. From the grand entrance lobby to the spectacular views from our balcony, every detail exudes elegance. We particularly appreciate the thoughtfully designed clubhouse where we’ve hosted numerous family gatherings. The project’s location is connected to everything essential, and offers the perfect balance we were seeking." },
+    { "family": "Dr. Mehra", "city": "Bangalore", "image": "t-mehra.webp", "name": "Dr. Priya Mehra, Resident since 2022",
+      "quote": "After retiring, we were looking for a home that offered both comfort and convenience. SLV Infrastructures exceeded our expectations. The walking tracks, senior-friendly facilities, and peaceful environment make it an ideal choice for our lifestyle. What truly stands out is the strong community bond – our neighbors have become like family. The proximity to hospitals and shopping centers gives us complete peace of mind." },
+    { "family": "The Reddy Family", "city": "Bangalore", "image": "t-reddy.webp", "name": "K.S. Reddy, Resident since 2025",
+      "quote": "As a young professional, I couldn’t have asked for a better investment. My RG Unique Structures Pvt.Ltd, the apartment’s location is unbeatable – just minutes from tech parks, premium restaurants, and shopping destinations. The modern amenities, especially the well-equipped gym and co-working space, perfectly complement my lifestyle. The property’s appreciation in just two years has proven this was a smart financial decision too!" }
+  ],
+  "about": [
+    { "family": "Sharma Family", "city": "Bangalore", "image": "t-sharma.webp", "name": "Rajesh Sharma, Resident since 2023",
+      "quote": "Moving into our dream home at Lotus Heights was the best decision we made. The attention to detail in construction, the thoughtful amenities, and the vibrant community life exceed our expectations. Our children particularly love the indoor sports complex, and my wife enjoys the organic garden." },
+    { "family": "Dr. Mehra", "city": "Bangalore", "image": "t-mehra-2.webp", "name": "Dr. Priya Mehra, Resident since 2022",
+      "quote": "As a doctor with unpredictable hours, security was my primary concern. The 24/7 surveillance and professional security staff give me peace of mind. The construction quality is impeccable – even after two years, everything feels brand new." },
+    { "family": "The Reddy Family", "city": "Bangalore", "image": "t-reddy.webp", "name": "K.S. Reddy, Resident since 2021",
+      "quote": "Having lived in Singapore for 15 years, we had high expectations for our retirement home. The international standard amenities and professional management here match any luxury development worldwide." }
+  ]
+}

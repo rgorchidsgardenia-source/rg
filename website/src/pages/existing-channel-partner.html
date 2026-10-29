@@ -1,0 +1,31 @@
+<!--{"title": "Existing Channel Partner | CP Lead Registration | RG Unique Structures", "path": "/existing-channel-partner/", "section": "/channel-partner/", "description": "Registered channel partners can register client leads and site visits for RG Unique Structures projects.", "noBand": true, "autoPopup": false}-->
+<section class="page-hero page-hero--image">
+  <img src="/assets/img/about/handshake.webp" alt="" width="1250" height="426">
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="/channel-partner/">Channel Partner</a><span aria-hidden="true">/</span><span>Existing</span></nav>
+    <h1 class="h1">Existing Channel Partner</h1>
+  </div>
+</section>
+
+<section class="section section--cream" aria-labelledby="cp-title">
+  <div class="wrap" style="max-width:900px">
+    <div class="band__form reveal" data-form-wrap>
+      <h2 class="h2" id="cp-title" style="margin-bottom:22px">CP Lead Registration</h2>
+      <form class="form" data-form="cp_lead" data-form-id="cp_lead_registration" novalidate>
+        <div class="field full"><input id="cl-cp" name="partner_name" type="text" placeholder=" " required maxlength="80"><label for="cl-cp">Channel Partner Name*</label></div>
+        <div class="field"><input id="cl-name" name="name" type="text" placeholder=" " required maxlength="80"><label for="cl-name">Client Name*</label></div>
+        <div class="field"><input id="cl-phone" name="phone" type="tel" placeholder=" " inputmode="tel" required maxlength="16"><label for="cl-phone">Client Phone Number*</label></div>
+        <div class="field full"><input id="cl-email" name="email" type="email" placeholder=" " required maxlength="120"><label for="cl-email">Client Email Id*</label></div>
+        <div class="field"><select id="cl-conf" name="configuration"><option value="3BHK">3BHK</option></select><label for="cl-conf">Configuration</label></div>
+        <div class="field"><select id="cl-proj" name="project"><option value="RG Orchids Gardenia">RG Orchid Gardenia</option></select><label for="cl-proj">Project</label></div>
+        <div class="field field--date"><input id="cl-date" name="visit_date" type="date" placeholder=" "><label for="cl-date">Date of Site visit</label></div>
+        <div class="field field--date"><input id="cl-time" name="visit_time" type="time" placeholder=" "><label for="cl-time">Time</label></div>
+        <div class="field full"><textarea id="cl-note" name="message" placeholder=" " maxlength="1000"></textarea><label for="cl-note">Note</label></div>
+        <label class="check full"><input type="checkbox" name="consent"><span>I / We authorize RG Unique Structures (the "Company") and its representatives to contact me with updates and notifications via email, SMS, whatsApp and Phone. This will override the registry on DND / NDNC.</span></label>
+        <div class="hp" aria-hidden="true"><label>Company <input name="company" tabindex="-1" autocomplete="off"></label></div>
+        <div class="full form__foot"><span class="form__note">Are you a new Channel Partner? <a class="link-arrow" href="/channel-partner/">Click Here</a></span><button class="btn" type="submit">Submit</button></div>
+      </form>
+      <div class="form-done" role="status">{{@icon check-circle}}<h3>Lead registered</h3><p>Thank you. The client lead has been registered with our sales team.</p></div>
+    </div>
+  </div>
+</section>

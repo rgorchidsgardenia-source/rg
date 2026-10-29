@@ -1,0 +1,52 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node build.mjs",
+  "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/:page(project|about-us|channel-partner|existing-channel-partner|careers|contact-us|terms-and-conditions|privacy-policy|rg-orchid-gardenia|a-k-maple|admin|landingpage)", "destination": "/:page/", "permanent": true },
+    { "source": "/rg-gardenia{/}?", "destination": "/rg-orchid-gardenia/", "permanent": true },
+    { "source": "/projects/rg-gardenia{/}?", "destination": "/rg-orchid-gardenia/", "permanent": true },
+    { "source": "/projects/:slug{/}?", "destination": "/project/", "permanent": true },
+    { "source": "/completed/:type{/}?", "destination": "/project/", "permanent": true },
+    { "source": "/category/:slug{/}?", "destination": "/", "permanent": true },
+    { "source": "/hello-world{/}?", "destination": "/", "permanent": true },
+    { "source": "/elementor-10{/}?", "destination": "/", "permanent": true },
+    { "source": "/landing-page{/}?", "destination": "/landingpage/", "permanent": false },
+    { "source": "/wp-admin{/}?", "destination": "/admin/", "permanent": false },
+    { "source": "/wp-login.php", "destination": "/admin/", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/landingpage/", "destination": "https://rgorchidsgardenia.vercel.app/landing-page/" },
+    { "source": "/landingpage/:path*", "destination": "https://rgorchidsgardenia.vercel.app/landing-page/:path*" },
+    { "source": "/api/lead", "destination": "https://rgorchidsgardenia.vercel.app/api/lead" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/assets/img/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }]
+    },
+    {
+      "source": "/admin/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    }
+  ],
+  "functions": {
+    "api/*.js": { "maxDuration": 10 }
+  }
+}

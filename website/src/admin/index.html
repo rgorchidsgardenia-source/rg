@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin | RG Unique Structures</title>
+<link rel="icon" href="/assets/img/brand/rg-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Text&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+
+<!-- Sign in -->
+<section class="auth" id="auth" hidden>
+  <div class="auth__card">
+    <img src="/assets/img/brand/rg-logo.webp" alt="RG Unique Structures" width="520" height="350" class="auth__logo">
+    <h1 id="authTitle">Admin sign in</h1>
+    <p class="muted" id="authSub">Leads, enquiries and website analytics.</p>
+    <form id="authForm" novalidate>
+      <label class="fld"><span>Email</span><input type="email" name="email" autocomplete="username" required></label>
+      <label class="fld" id="pwField"><span>Password</span><input type="password" name="password" autocomplete="current-password" minlength="8" required></label>
+      <button class="btn btn--block" type="submit" id="authBtn">Sign in</button>
+    </form>
+    <p class="auth__msg" id="authMsg" role="status"></p>
+    <div class="auth__links">
+      <button type="button" class="link" data-mode="forgot">Forgot password?</button>
+      <button type="button" class="link" data-mode="signup">First time? Create your login</button>
+      <button type="button" class="link" data-mode="signin" hidden>Back to sign in</button>
+    </div>
+  </div>
+</section>
+
+<!-- Not authorised -->
+<section class="auth" id="denied" hidden>
+  <div class="auth__card">
+    <img src="/assets/img/brand/rg-logo.webp" alt="RG Unique Structures" width="520" height="350" class="auth__logo">
+    <h1>Access pending</h1>
+    <p class="muted">You are signed in as <strong id="deniedEmail"></strong>, but this email is not on the admin list yet. Ask an existing admin to add it under <em>Team</em>.</p>
+    <button class="btn btn--block" type="button" data-signout>Sign out</button>
+  </div>
+</section>
+
+<!-- App -->
+<div class="app" id="app" hidden>
+  <aside class="side">
+    <a class="side__brand" href="/" target="_blank" rel="noopener"><img src="/assets/img/brand/rg-logo.webp" alt="RG Unique Structures" width="520" height="350"></a>
+    <nav class="side__nav" aria-label="Admin">
+      <a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/></svg>Dashboard</a>
+      <a href="#leads" data-view="leads"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H5.2L4 17.2zM8 9h8M8 12h5"/></svg>All leads<span class="pill" id="newCount" hidden></span></a>
+      <a href="#partners" data-view="partners"><svg viewBox="0 0 24 24"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0 0-6M22 20a6 6 0 0 0-5-5.9"/></svg>Channel partners</a>
+      <a href="#careers" data-view="careers"><svg viewBox="0 0 24 24"><path d="M3 7h18v13H3zM8 7V4h8v3M3 12h18"/></svg>Careers</a>
+      <a href="#analytics" data-view="analytics"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16V9M11 16V5M16 16v-4M21 16V8"/></svg>Website analytics</a>
+      <a href="#team" data-view="team"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg>Team</a>
+    </nav>
+    <div class="side__foot">
+      <span class="muted small" id="whoami"></span>
+      <button class="btn btn--ghost btn--sm" type="button" data-signout>Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <button class="icon-btn menu-btn" type="button" aria-label="Menu" id="menuBtn"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <h1 id="viewTitle">Dashboard</h1>
+      <div class="top__right">
+        <select id="range" aria-label="Date range">
+          <option value="1">Today</option>
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last 12 months</option>
+          <option value="3650">All time</option>
+        </select>
+        <button class="icon-btn" type="button" aria-label="Refresh" id="refreshBtn"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+      </div>
+    </header>
+
+    <!-- Dashboard -->
+    <section class="view" id="view-dashboard">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid">
+        <div class="card card--wide"><div class="card__head"><h2>Leads per day</h2><span class="muted small" id="leadsTotal"></span></div><div class="chart" id="leadsChart"></div></div>
+        <div class="card"><div class="card__head"><h2>Where leads come from</h2></div><div id="byChannel" class="bars"></div></div>
+        <div class="card"><div class="card__head"><h2>By project</h2></div><div id="byProject" class="bars"></div></div>
+        <div class="card"><div class="card__head"><h2>By form</h2></div><div id="byType" class="bars"></div></div>
+        <div class="card"><div class="card__head"><h2>Pipeline</h2></div><div id="byStatus" class="bars"></div></div>
+        <div class="card card--wide"><div class="card__head"><h2>Follow-ups due</h2><a href="#leads" class="link small" data-filter-followup>See all</a></div><div id="dueList"></div></div>
+        <div class="card card--wide"><div class="card__head"><h2>Latest leads</h2><a href="#leads" class="link small">Open inbox</a></div><div id="recentList"></div></div>
+      </div>
+    </section>
+
+    <!-- Leads (also used for partners and careers) -->
+    <section class="view" id="view-leads" hidden>
+      <div class="toolbar">
+        <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="q" placeholder="Search name, phone, email, partner"></label>
+        <select id="fType" aria-label="Form">
+          <option value="">All forms</option>
+          <option value="callback">Call-back requests</option>
+          <option value="project">Project enquiries</option>
+          <option value="contact">Contact page</option>
+          <option value="landing_page">Landing page</option>
+          <option value="channel_partner">Channel partner sign-ups</option>
+          <option value="cp_lead">CP lead registrations</option>
+          <option value="career">Job applications</option>
+        </select>
+        <select id="fStatus" aria-label="Status"><option value="">All statuses</option></select>
+        <select id="fProject" aria-label="Project">
+          <option value="">All projects</option>
+          <option>RG Orchids Gardenia</option>
+          <option>A K Maple</option>
+          <option>General</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="fDue"> Follow-up due</label>
+        <button class="btn btn--ghost btn--sm" type="button" id="exportBtn">Export CSV</button>
+      </div>
+      <div class="card card--flush">
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Received</th><th>Name</th><th>Phone</th><th>Form</th><th>Project</th><th>Source</th><th>Status</th><th>Follow-up</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="pager"><span class="muted small" id="pageInfo"></span><div><button class="btn btn--ghost btn--sm" type="button" id="prevPage">Previous</button> <button class="btn btn--ghost btn--sm" type="button" id="nextPage">Next</button></div></div>
+      </div>
+    </section>
+
+    <!-- Analytics -->
+    <section class="view" id="view-analytics" hidden>
+      <div class="kpis" id="aKpis"></div>
+      <div class="grid">
+        <div class="card card--wide"><div class="card__head"><h2>Visitors per day</h2><span class="muted small">Page views in light colour</span></div><div class="chart" id="viewsChart"></div></div>
+        <div class="card"><div class="card__head"><h2>Top pages</h2></div><div id="topPages" class="bars"></div></div>
+        <div class="card"><div class="card__head"><h2>Referring sites</h2></div><div id="referrers" class="bars"></div></div>
+        <div class="card"><div class="card__head"><h2>Devices</h2></div><div id="devices" class="bars"></div></div>
+        <div class="card"><div class="card__head"><h2>Campaigns (utm_campaign)</h2></div><div id="campaigns" class="bars"></div></div>
+      </div>
+    </section>
+
+    <!-- Team -->
+    <section class="view" id="view-team" hidden>
+      <div class="grid">
+        <div class="card card--wide">
+          <div class="card__head"><h2>Admins</h2></div>
+          <p class="muted small">People on this list can sign in to this dashboard after they create a login with the same email.</p>
+          <form class="inline-form" id="addAdmin">
+            <input type="email" name="email" placeholder="name@company.com" required aria-label="Email">
+            <input type="text" name="name" placeholder="Name (optional)" aria-label="Name">
+            <button class="btn btn--sm" type="submit">Add admin</button>
+          </form>
+          <div id="adminList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Lead drawer -->
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer__scrim" data-close-drawer></div>
+  <aside class="drawer__panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <header class="drawer__head">
+      <div><h2 id="dTitle"></h2><p class="muted small" id="dSub"></p></div>
+      <button class="icon-btn" type="button" aria-label="Close" data-close-drawer><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </header>
+    <div class="drawer__body">
+      <div class="quick" id="dQuick"></div>
+      <div class="manage">
+        <label class="fld"><span>Status</span><select id="dStatus"></select></label>
+        <label class="fld"><span>Follow-up on</span><input type="datetime-local" id="dFollow"></label>
+        <label class="fld"><span>Assigned to</span><input type="text" id="dAssign" placeholder="Sales person" maxlength="120"></label>
+      </div>
+      <button class="btn btn--sm" type="button" id="dSave">Save changes</button>
+      <dl class="details" id="dDetails"></dl>
+      <h3 class="sub">Notes &amp; history</h3>
+      <form class="note-form" id="noteForm">
+        <textarea id="noteText" rows="3" maxlength="2000" placeholder="Add a call note, outcome or next step…" required></textarea>
+        <button class="btn btn--sm" type="submit">Add note</button>
+      </form>
+      <ol class="timeline" id="dTimeline"></ol>
+      <button class="link danger small" type="button" id="dDelete">Delete this lead permanently</button>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/assets/vendor/supabase.min.js"></script>
+<script src="/admin/admin.js"></script>
+</body>
+</html>

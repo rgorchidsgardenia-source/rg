@@ -1,0 +1,11 @@
+{
+  "name": "rg-unique-structures-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RG Unique Structures website (static pages + Vercel API + Supabase admin).",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node dev.mjs"
+  },
+  "engines": { "node": ">=18" }
+}
