@@ -64,7 +64,7 @@ The popup opens once per visit after 9 seconds (and from every "Request Call Bac
 - **Repeat leads** are flagged automatically when the same phone number enquired in the last 180 days.
 - **Team**: add or remove admins.
 
-Spam protection: hidden honeypot field, per-IP rate limit, database checks on every field, and forms
+Spam protection: hidden honeypot field, no submission limit, database checks on every field, and forms
 report whether a person interacted with them (scripted posts are dropped and only logged).
 
 Access: a person needs a confirmed Supabase Auth login **and** their email in `public.admin_users`.

@@ -4,7 +4,7 @@
 // Env vars: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY (insert-only through RLS).
 // Optional: LEAD_WEBHOOK_URL also receives each enquiry as JSON; ALLOWED_ORIGINS for cross-origin forms.
 // Without Supabase settings it runs in log-only mode: the enquiry is printed to the function logs.
-const { applyCors, readBody, pick, clientIp, limiter, insert, supabaseConfigured } = require('./_lib');
+const { applyCors, readBody, pick, clientIp, insert, supabaseConfigured } = require('./_lib');
 
 const TYPES = ['callback', 'contact', 'project', 'channel_partner', 'cp_lead', 'career'];
 const FIELDS = {
@@ -14,7 +14,6 @@ const FIELDS = {
   utm_source: 200, utm_medium: 200, utm_campaign: 200, utm_term: 200, utm_content: 200, gclid: 200, fbclid: 200
 };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const limited = limiter(6, 10 * 60 * 1000);
 
 function validate(e) {
   if (!TYPES.includes(e.type)) return 'Invalid form';
@@ -53,7 +52,6 @@ module.exports = async function handler(req, res) {
   if (problem) return res.status(400).json({ ok: false, error: problem });
 
   const ip = clientIp(req);
-  if (limited(ip)) return res.status(429).json({ ok: false, error: 'Too many requests, please call us instead' });
 
   const row = { consent: body.consent === true, user_agent: String(req.headers['user-agent'] || '').slice(0, 300), ip_address: ip || null,
     country: String(req.headers['x-vercel-ip-country'] || '').slice(0, 8) || null };

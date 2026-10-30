@@ -13,9 +13,6 @@
 //                    (Google Apps Script, Zapier, Make, a CRM, ...).
 
 const DEFAULT_ORIGINS = ['https://rgstructures.in', 'https://www.rgstructures.in'];
-const MAX_PER_WINDOW = 5;
-const WINDOW_MS = 10 * 60 * 1000;
-const hits = new Map(); // best-effort, per warm instance
 
 const FIELDS = {
   name: 80, phone: 15, email: 120, interest: 40, visit_date: 10, form_id: 60,
@@ -69,15 +66,6 @@ function validate(lead) {
   return null;
 }
 
-function rateLimited(ip) {
-  const now = Date.now();
-  const recent = (hits.get(ip) || []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear();
-  return recent.length > MAX_PER_WINDOW;
-}
-
 async function saveToSupabase(row) {
   const url = process.env.SUPABASE_URL;
   // The publishable key is enough: RLS lets it insert leads and nothing else.
@@ -120,7 +108,6 @@ module.exports = async function handler(req, res) {
   if (problem) return res.status(400).json({ ok: false, error: problem });
 
   const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
-  if (rateLimited(ip)) return res.status(429).json({ ok: false, error: 'Too many requests, please call us instead' });
 
   const row = {
     ...lead,
