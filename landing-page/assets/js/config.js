@@ -8,10 +8,10 @@ window.RG_CONFIG = {
   //   apiBase: 'https://rg-orchids-gardenia.vercel.app'
   apiBase: '',
 
-  // Where the videos are served from. Keep 'assets/video/' to serve them next
-  // to the page, or point at a CDN / the Vercel deployment to keep heavy
-  // files off shared hosting, e.g. 'https://rg-orchids-gardenia.vercel.app/landing-page/assets/video/'
-  videoBase: 'assets/video/',
+  // Where the videos are served from. Videos always stream from the Vercel
+  // deployment directly: going through the rgstructures.in/landingpage/ proxy
+  // breaks byte-range requests, and iPhones/iPads then refuse to play them.
+  videoBase: 'https://rgorchidsgardenia.vercel.app/landing-page/assets/video/',
 
   // Headline numbers used everywhere on the page ([data-price], [data-size]).
   price: '₹2.79 Cr',

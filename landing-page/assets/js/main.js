@@ -86,9 +86,12 @@
   var heroVideo = $('.hero-video');
   if (heroVideo) {
     if (CFG.videoBase && CFG.videoBase !== 'assets/video/') {
-      $$('source', heroVideo).forEach(function (s) { s.src = CFG.videoBase + s.getAttribute('src').split('/').pop(); });
-      heroVideo.poster = CFG.videoBase + 'hero-poster.jpg';
-      heroVideo.load();
+      var moved = false;
+      $$('source', heroVideo).forEach(function (s) {
+        var url = CFG.videoBase + s.getAttribute('src').split('/').pop();
+        if (s.getAttribute('src') !== url) { s.src = url; moved = true; }
+      });
+      if (moved) { heroVideo.poster = CFG.videoBase + 'hero-poster.jpg'; heroVideo.load(); }
     }
     if (reduceMotion) { heroVideo.removeAttribute('autoplay'); heroVideo.pause(); }
     else if ('IntersectionObserver' in window) {
