@@ -278,3 +278,8 @@ drop trigger if exists auto_confirm_admin on auth.users;
 create trigger auto_confirm_admin
   before insert on auth.users
   for each row execute function public.auto_confirm_admin();
+
+-- Migration drop_auto_confirm_admin: the admin login exists, and the admin page no longer offers
+-- sign-up or password reset, so the auto-confirm trigger above was removed.
+drop trigger if exists auto_confirm_admin on auth.users;
+drop function if exists public.auto_confirm_admin();

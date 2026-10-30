@@ -22,7 +22,7 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
   var $ = function (s, c) { return (c || document).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
-  var state = { view: 'dashboard', page: 0, rows: [], current: null, lastNew: null, user: null, recovery: false };
+  var state = { view: 'dashboard', page: 0, rows: [], current: null, lastNew: null, user: null };
 
   /* ---------- helpers ---------- */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -63,51 +63,27 @@
   function tableFor(r) { return r.source === 'landing' ? 'leads' : 'enquiries'; }
   function digits(p) { return String(p || '').replace(/\D/g, ''); }
 
-  /* ---------- auth ---------- */
-  var mode = 'signin';
-  function setMode(m) {
-    mode = m;
-    var pw = $('#pwField'); var title = $('#authTitle'); var btn = $('#authBtn'); var sub = $('#authSub');
-    var emailRow = $('#authForm [name=email]').closest('.fld');
-    emailRow.hidden = m === 'recovery';
-    pw.hidden = m === 'forgot';
-    $('#authForm [name=password]').autocomplete = m === 'signin' ? 'current-password' : 'new-password';
-    title.textContent = { signin: 'Admin sign in', signup: 'Create your login', forgot: 'Reset password', recovery: 'Choose a new password' }[m];
-    sub.textContent = { signin: 'Leads, enquiries and website analytics.', signup: 'Use the email an admin added for you. You will get an email to confirm it.', forgot: 'We will email you a link to set a new password.', recovery: 'At least 8 characters.' }[m];
-    btn.textContent = { signin: 'Sign in', signup: 'Create login', forgot: 'Send reset link', recovery: 'Save password' }[m];
-    $$('.auth__links [data-mode]').forEach(function (b) { b.hidden = m === 'signin' ? b.dataset.mode === 'signin' : b.dataset.mode !== 'signin'; });
-    msg('');
-  }
+  /* ---------- auth (sign in only; the admin login already exists) ---------- */
   function msg(text, ok) { var m = $('#authMsg'); m.textContent = text; m.className = 'auth__msg ' + (text ? (ok ? 'ok' : 'err') : ''); }
-  $$('.auth__links [data-mode]').forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.mode); }); });
 
   $('#authForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var email = $('#authForm [name=email]').value.trim().toLowerCase();
     var password = $('#authForm [name=password]').value;
-    var btn = $('#authBtn'); btn.disabled = true;
-    var redirect = location.origin + '/admin/';
-    var p;
-    if (mode !== 'recovery' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg('Enter a valid email'); btn.disabled = false; return; }
-    if (mode !== 'forgot' && password.length < 8) { msg('Password must be at least 8 characters'); btn.disabled = false; return; }
-    if (mode === 'signin') p = sb.auth.signInWithPassword({ email: email, password: password });
-    else if (mode === 'signup') p = sb.auth.signUp({ email: email, password: password, options: { emailRedirectTo: redirect } });
-    else if (mode === 'forgot') p = sb.auth.resetPasswordForEmail(email, { redirectTo: redirect });
-    else p = sb.auth.updateUser({ password: password });
-    p.then(function (res) {
+    var btn = $('#authBtn');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg('Enter a valid email'); return; }
+    if (!password) { msg('Enter your password'); return; }
+    btn.disabled = true; msg('');
+    sb.auth.signInWithPassword({ email: email, password: password }).then(function (res) {
       if (res.error) throw res.error;
-      if (mode === 'signup') { msg('Check your inbox and confirm your email, then sign in.', true); setTimeout(function () { setMode('signin'); msg('Confirm your email, then sign in.', true); }, 2500); }
-      else if (mode === 'forgot') msg('If that email has a login, a reset link is on its way.', true);
-      else if (mode === 'recovery') { state.recovery = false; history.replaceState(null, '', '/admin/'); boot(); }
     }).catch(function (err) {
-      msg(/Invalid login/i.test(err.message) ? 'Wrong email or password.' : /not confirmed/i.test(err.message) ? 'Please confirm your email first (check your inbox).' : err.message);
+      msg(/Invalid login/i.test(err.message) ? 'Wrong email or password.' : err.message);
     }).then(function () { btn.disabled = false; });
   });
   $$('[data-signout]').forEach(function (b) { b.addEventListener('click', function () { sb.auth.signOut().then(function () { location.replace('/admin/'); }); }); });
 
   sb.auth.onAuthStateChange(function (event) {
-    if (event === 'PASSWORD_RECOVERY') { state.recovery = true; show('auth'); setMode('recovery'); }
-    if (event === 'SIGNED_IN' && !state.recovery && !state.user) boot();
+    if (event === 'SIGNED_IN' && !state.user) boot();
   });
 
   function show(which) {
@@ -119,7 +95,7 @@
   function boot() {
     sb.auth.getSession().then(function (r) {
       var session = r.data && r.data.session;
-      if (!session || state.recovery) { if (!state.recovery) { show('auth'); setMode('signin'); } return; }
+      if (!session) { show('auth'); return; }
       return sb.rpc('is_admin').then(function (res) {
         if (res.error || !res.data) { $('#deniedEmail').textContent = session.user.email; show('denied'); return; }
         if (state.user) return;
@@ -132,7 +108,7 @@
   }
 
   /* ---------- app shell ---------- */
-  var VIEWS = { dashboard: 'Dashboard', leads: 'All leads', pipeline: 'Pipeline', partners: 'Channel partners', careers: 'Careers', analytics: 'Website analytics', settings: 'Site settings', team: 'Team' };
+  var VIEWS = { dashboard: 'Dashboard', leads: 'All leads', pipeline: 'Pipeline', partners: 'Channel partners', careers: 'Careers', analytics: 'Website analytics', settings: 'Site settings' };
   function route() {
     var v = (location.hash || '#dashboard').slice(1);
     if (!VIEWS[v]) v = 'dashboard';
@@ -142,7 +118,7 @@
     var panel = v === 'partners' || v === 'careers' ? 'leads' : v;
     $$('.view').forEach(function (s) { s.hidden = s.id !== 'view-' + panel; });
     $('#app').classList.remove('nav-open');
-    $('#range').hidden = v === 'team' || v === 'settings';
+    $('#range').hidden = v === 'settings';
     if (panel === 'leads') {
       var typeSel = $('#fType');
       typeSel.hidden = v !== 'leads';
@@ -154,7 +130,6 @@
   function load() {
     if (state.view === 'dashboard') return loadDashboard();
     if (state.view === 'analytics') return loadDashboard();
-    if (state.view === 'team') return loadTeam();
     if (state.view === 'pipeline') return loadBoard();
     if (state.view === 'settings') return loadSettings();
     return loadLeads();
@@ -176,7 +151,6 @@
     $('#nextPage').addEventListener('click', function () { state.page++; loadLeads(); });
     $('#exportBtn').addEventListener('click', exportCsv);
     $$('[data-filter-followup]').forEach(function (a) { a.addEventListener('click', function () { $('#fDue').checked = true; }); });
-    $('#addAdmin').addEventListener('submit', addAdmin);
     $('#settingsForm').addEventListener('submit', saveSettings);
     route();
     pollNew();
@@ -191,7 +165,7 @@
       pill.hidden = !n; pill.textContent = n;
       if (state.lastNew !== null && n > state.lastNew) {
         toast('New lead received');
-        if (state.view !== 'team' && state.view !== 'analytics') load();
+        if (state.view !== 'analytics') load();
       }
       state.lastNew = n;
     });
@@ -413,7 +387,7 @@
       return Promise.all(log.map(function (l) { return logActivity(l[0], l[1]); }));
     }).then(function () {
       toast('Saved'); loadTimeline(); pollNew();
-      if (state.view === 'dashboard') loadDashboard(); else if (state.view === 'pipeline') loadBoard(); else if (state.view !== 'analytics' && state.view !== 'team') loadLeads();
+      if (state.view === 'dashboard') loadDashboard(); else if (state.view === 'pipeline') loadBoard(); else if (state.view !== 'analytics') loadLeads();
     }).catch(fail).then(function () { btn.disabled = false; });
   });
 
@@ -500,33 +474,6 @@
       if (res.error) throw res.error;
       toast('Settings saved. The website updates within a minute.'); loadSettings();
     }).catch(fail).then(function () { btn.disabled = false; });
-  }
-
-  /* ---------- team ---------- */
-  function loadTeam() {
-    sb.from('admin_users').select('*').order('created_at').then(function (res) {
-      if (res.error) throw res.error;
-      var me = (state.user.email || '').toLowerCase();
-      $('#adminList').innerHTML = res.data.map(function (a) {
-        return '<div class="admin-row"><div><b>' + esc(a.name || a.email) + '</b><div class="muted small">' + esc(a.email) + (a.added_by ? ' · added by ' + esc(a.added_by) : '') + '</div></div>' +
-          (a.email === me ? '<span class="muted small">You</span>' : '<button class="link danger small" type="button" data-remove="' + esc(a.email) + '">Remove</button>') + '</div>';
-      }).join('');
-      $$('[data-remove]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          if (!window.confirm('Remove ' + b.dataset.remove + ' from admins?')) return;
-          sb.from('admin_users').delete().eq('email', b.dataset.remove).then(function (r) { if (r.error) throw r.error; toast('Removed'); loadTeam(); }).catch(fail);
-        });
-      });
-    }).catch(fail);
-  }
-  function addAdmin(e) {
-    e.preventDefault();
-    var f = e.target; var email = f.email.value.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('Enter a valid email'); return; }
-    sb.from('admin_users').insert({ email: email, name: f.name.value.trim() || null, added_by: state.user.email }).then(function (r) {
-      if (r.error) throw r.error;
-      f.reset(); toast(email + ' added. They can now create a login at /admin.'); loadTeam();
-    }).catch(fail);
   }
 
   boot();

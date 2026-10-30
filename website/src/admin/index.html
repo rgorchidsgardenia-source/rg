@@ -25,11 +25,6 @@
       <button class="btn btn--block" type="submit" id="authBtn">Sign in</button>
     </form>
     <p class="auth__msg" id="authMsg" role="status"></p>
-    <div class="auth__links">
-      <button type="button" class="link" data-mode="forgot">Forgot password?</button>
-      <button type="button" class="link" data-mode="signup">First time? Create your login</button>
-      <button type="button" class="link" data-mode="signin" hidden>Back to sign in</button>
-    </div>
   </div>
 </section>
 
@@ -37,8 +32,8 @@
 <section class="auth" id="denied" hidden>
   <div class="auth__card">
     <img src="/assets/img/brand/rg-logo.webp" alt="RG Unique Structures" width="520" height="350" class="auth__logo">
-    <h1>Access pending</h1>
-    <p class="muted">You are signed in as <strong id="deniedEmail"></strong>, but this email is not on the admin list yet. Ask an existing admin to add it under <em>Team</em>.</p>
+    <h1>No access</h1>
+    <p class="muted">You are signed in as <strong id="deniedEmail"></strong>, but this login does not have admin access.</p>
     <button class="btn btn--block" type="button" data-signout>Sign out</button>
   </div>
 </section>
@@ -55,7 +50,6 @@
       <a href="#careers" data-view="careers"><svg viewBox="0 0 24 24"><path d="M3 7h18v13H3zM8 7V4h8v3M3 12h18"/></svg>Careers</a>
       <a href="#analytics" data-view="analytics"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16V9M11 16V5M16 16v-4M21 16V8"/></svg>Website analytics</a>
       <a href="#settings" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Site settings</a>
-      <a href="#team" data-view="team"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg>Team</a>
     </nav>
     <div class="side__foot">
       <span class="muted small" id="whoami"></span>
@@ -177,21 +171,6 @@
       </form>
     </section>
 
-    <!-- Team -->
-    <section class="view" id="view-team" hidden>
-      <div class="grid">
-        <div class="card card--wide">
-          <div class="card__head"><h2>Admins</h2></div>
-          <p class="muted small">People on this list can sign in to this dashboard after they create a login with the same email.</p>
-          <form class="inline-form" id="addAdmin">
-            <input type="email" name="email" placeholder="name@company.com" required aria-label="Email">
-            <input type="text" name="name" placeholder="Name (optional)" aria-label="Name">
-            <button class="btn btn--sm" type="submit">Add admin</button>
-          </form>
-          <div id="adminList"></div>
-        </div>
-      </div>
-    </section>
   </main>
 </div>
 

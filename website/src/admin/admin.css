@@ -45,7 +45,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .auth__msg { min-height: 20px; margin: 14px 0 0; font-size: 13.5px; }
 .auth__msg.err { color: var(--red); }
 .auth__msg.ok { color: var(--green); }
-.auth__links { display: grid; gap: 8px; justify-items: start; margin-top: 10px; font-size: 13.5px; }
 
 /* Layout */
 .app { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
