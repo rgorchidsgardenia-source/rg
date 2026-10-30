@@ -12,6 +12,7 @@
     { "source": "/hello-world{/}?", "destination": "/", "permanent": true },
     { "source": "/elementor-10{/}?", "destination": "/", "permanent": true },
     { "source": "/landing-page{/}?", "destination": "/landingpage/", "permanent": false },
+    { "source": "/landingpage/assets/video/:file", "destination": "https://rgorchidsgardenia.vercel.app/landing-page/assets/video/:file", "permanent": false },
     { "source": "/wp-admin{/}?", "destination": "/admin/", "permanent": false },
     { "source": "/wp-login.php", "destination": "/admin/", "permanent": false }
   ],

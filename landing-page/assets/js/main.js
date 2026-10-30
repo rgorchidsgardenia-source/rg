@@ -99,6 +99,16 @@
         });
       }, { threshold: 0.05 }).observe(heroVideo);
     }
+    // iOS Low Power Mode blocks autoplay; start the video on the visitor's first tap instead.
+    if (!reduceMotion) {
+      var kickHero = function () {
+        if (heroVideo.paused && !document.body.classList.contains('modal-open') && heroVideo.getBoundingClientRect().bottom > 0) { var p = heroVideo.play(); if (p && p.catch) p.catch(function () {}); }
+      };
+      ['touchend', 'click'].forEach(function (t) { document.addEventListener(t, kickHero, { passive: true }); });
+      heroVideo.addEventListener('playing', function () {
+        ['touchend', 'click'].forEach(function (t) { document.removeEventListener(t, kickHero, { passive: true }); });
+      }, { once: true });
+    }
   }
 
   /* ---------- Tabs: rooms, floor plans, location ---------- */
