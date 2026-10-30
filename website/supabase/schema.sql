@@ -257,3 +257,24 @@ grant execute on function public.admin_dashboard(timestamptz, timestamptz) to au
 -- public.site_settings (key, value jsonb): public read, admin insert/update, stamped with who changed it.
 -- enquiries.is_repeat / leads.is_repeat: set by trigger flag_repeat_lead() when the phone enquired in the last 180 days.
 -- public.inbox gained the is_repeat column. See the Supabase migration history for the exact SQL.
+
+-- Migration auto_confirm_admin_signups: admins listed in public.admin_users don't need to confirm
+-- their email when they create their login.
+create or replace function public.auto_confirm_admin()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if exists (select 1 from public.admin_users a where a.email = lower(new.email)) then
+    new.email_confirmed_at := coalesce(new.email_confirmed_at, now());
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists auto_confirm_admin on auth.users;
+create trigger auto_confirm_admin
+  before insert on auth.users
+  for each row execute function public.auto_confirm_admin();
