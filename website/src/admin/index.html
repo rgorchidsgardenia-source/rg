@@ -46,6 +46,8 @@
       <a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/></svg>Dashboard</a>
       <a href="#leads" data-view="leads"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H5.2L4 17.2zM8 9h8M8 12h5"/></svg>All leads<span class="pill" id="newCount" hidden></span></a>
       <a href="#pipeline" data-view="pipeline"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v6h-4z"/></svg>Pipeline</a>
+      <a href="#emails" data-view="emails"><svg viewBox="0 0 24 24"><path d="M3 5h18v14H3zM3 6l9 7 9-7"/></svg>Emails<span class="pill" id="replyCount" hidden></span></a>
+      <a href="#automation" data-view="automation"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Email automation</a>
       <a href="#partners" data-view="partners"><svg viewBox="0 0 24 24"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0 0-6M22 20a6 6 0 0 0-5-5.9"/></svg>Channel partners</a>
       <a href="#careers" data-view="careers"><svg viewBox="0 0 24 24"><path d="M3 7h18v13H3zM8 7V4h8v3M3 12h18"/></svg>Careers</a>
       <a href="#analytics" data-view="analytics"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16V9M11 16V5M16 16v-4M21 16V8"/></svg>Website analytics</a>
@@ -171,6 +173,58 @@
       </form>
     </section>
 
+    <!-- Emails -->
+    <section class="view" id="view-emails" hidden>
+      <div class="conn" id="emailConn" hidden></div>
+      <div class="kpis" id="eKpis"></div>
+      <div class="toolbar">
+        <div class="seg" id="eBox" role="tablist" aria-label="Mailbox">
+          <button type="button" class="is-on" data-box="">All</button>
+          <button type="button" data-box="in">Replies</button>
+          <button type="button" data-box="out">Sent</button>
+          <button type="button" data-box="auto_reply">Auto-replies</button>
+          <button type="button" data-box="team_alert">Team alerts</button>
+          <button type="button" data-box="problems">Problems</button>
+        </div>
+        <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="eq" placeholder="Search email address or subject"></label>
+        <button class="btn btn--sm" type="button" id="composeBtn">New email</button>
+      </div>
+      <div class="card card--flush">
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>When</th><th></th><th>To / from</th><th>Subject</th><th>Type</th><th>Status</th></tr></thead>
+            <tbody id="eRows"></tbody>
+          </table>
+        </div>
+        <div class="pager"><span class="muted small" id="ePageInfo"></span><div><button class="btn btn--ghost btn--sm" type="button" id="ePrev">Previous</button> <button class="btn btn--ghost btn--sm" type="button" id="eNext">Next</button></div></div>
+      </div>
+    </section>
+
+    <!-- Email automation -->
+    <section class="view" id="view-automation" hidden>
+      <div class="conn" id="autoConn" hidden></div>
+      <form class="grid" id="mailSettings">
+        <div class="card">
+          <div class="card__head"><h2>Sending</h2><span class="badge beta">Beta</span></div>
+          <label class="chk" style="margin-bottom:14px"><input type="checkbox" name="enabled"> Send automatic emails</label>
+          <label class="fld"><span>From name</span><input name="from_name" maxlength="80" required></label>
+          <label class="fld"><span>From address (on a domain verified in Resend)</span><input name="from_email" type="email" maxlength="120" required></label>
+          <label class="fld"><span>Replies go to (Resend receiving address; empty = the from address)</span><input name="reply_to" type="email" maxlength="120"></label>
+        </div>
+        <div class="card">
+          <div class="card__head"><h2>Team alerts &amp; signature</h2></div>
+          <label class="fld"><span>Send a new-lead alert to (comma-separated emails, empty = off)</span><input name="notify_to" maxlength="500" placeholder="sales@rgstructures.in"></label>
+          <label class="fld"><span>Signature (added under every email)</span><textarea name="signature" rows="4" maxlength="1000"></textarea></label>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span class="muted small" id="mailMeta"></span><button class="btn btn--sm" type="submit">Save</button></div>
+        </div>
+      </form>
+      <div class="card card--wide tpl-head">
+        <div class="card__head"><h2>Templates</h2></div>
+        <p class="muted small">Personalise with <code>{{first_name}}</code> <code>{{name}}</code> <code>{{phone}}</code> <code>{{email}}</code> <code>{{project}}</code> <code>{{interest}}</code> <code>{{position}}</code> <code>{{partner_name}}</code> <code>{{company_phone}}</code>. Leave a blank line between paragraphs.</p>
+      </div>
+      <div class="grid" id="templates"></div>
+    </section>
+
   </main>
 </div>
 
@@ -191,6 +245,8 @@
       </div>
       <button class="btn btn--sm" type="button" id="dSave">Save changes</button>
       <dl class="details" id="dDetails"></dl>
+      <h3 class="sub">Emails <button class="link small" type="button" id="dMail" style="float:right">Send email</button></h3>
+      <div class="mail-list" id="dEmails"></div>
       <h3 class="sub">Notes &amp; history</h3>
       <form class="note-form" id="noteForm">
         <textarea id="noteText" rows="3" maxlength="2000" placeholder="Add a call note, outcome or next step…" required></textarea>
@@ -199,6 +255,42 @@
       <ol class="timeline" id="dTimeline"></ol>
       <button class="link danger small" type="button" id="dDelete">Delete this lead permanently</button>
     </div>
+  </aside>
+</div>
+
+<!-- Email drawer -->
+<div class="drawer" id="mailDrawer" aria-hidden="true">
+  <div class="drawer__scrim" data-close-mail></div>
+  <aside class="drawer__panel drawer__panel--wide" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <header class="drawer__head">
+      <div><h2 id="mTitle"></h2><p class="muted small" id="mSub"></p></div>
+      <button class="icon-btn" type="button" aria-label="Close" data-close-mail><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </header>
+    <div class="drawer__body">
+      <div class="quick" id="mQuick"></div>
+      <dl class="details" id="mDetails"></dl>
+      <iframe class="mail-frame" id="mFrame" title="Email content" sandbox=""></iframe>
+      <h3 class="sub">Delivery timeline</h3>
+      <ol class="timeline" id="mTimeline"></ol>
+    </div>
+  </aside>
+</div>
+
+<!-- Compose -->
+<div class="drawer" id="compose" aria-hidden="true">
+  <div class="drawer__scrim" data-close-compose></div>
+  <aside class="drawer__panel" role="dialog" aria-modal="true" aria-labelledby="cTitle">
+    <header class="drawer__head">
+      <div><h2 id="cTitle">New email</h2><p class="muted small">Sent through Resend with your signature, and tracked here.</p></div>
+      <button class="icon-btn" type="button" aria-label="Close" data-close-compose><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </header>
+    <form class="drawer__body" id="composeForm">
+      <label class="fld"><span>To</span><input name="to" type="email" maxlength="120" required></label>
+      <label class="fld"><span>Subject</span><input name="subject" maxlength="200" required></label>
+      <label class="fld"><span>Message</span><textarea name="body" rows="12" maxlength="10000" required></textarea></label>
+      <input type="hidden" name="lead_source"><input type="hidden" name="lead_id"><input type="hidden" name="in_reply_to">
+      <button class="btn" type="submit">Send email</button>
+    </form>
   </aside>
 </div>
 

@@ -18,7 +18,8 @@
   "rewrites": [
     { "source": "/landingpage/", "destination": "https://rgorchidsgardenia.vercel.app/landing-page/" },
     { "source": "/landingpage/:path*", "destination": "https://rgorchidsgardenia.vercel.app/landing-page/:path*" },
-    { "source": "/api/lead", "destination": "https://rgorchidsgardenia.vercel.app/api/lead" }
+    { "source": "/api/lead", "destination": "https://rgorchidsgardenia.vercel.app/api/lead" },
+    { "source": "/api/email/:action", "destination": "/api/email?action=:action" }
   ],
   "headers": [
     {
@@ -47,6 +48,7 @@
     }
   ],
   "functions": {
-    "api/*.js": { "maxDuration": 10 }
+    "api/*.js": { "maxDuration": 10 },
+    "api/*.mjs": { "maxDuration": 20 }
   }
 }

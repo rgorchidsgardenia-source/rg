@@ -155,6 +155,38 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .timeline .meta { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
 .timeline p { margin: 0; white-space: pre-wrap; }
 
+/* ---------- Emails ---------- */
+.conn { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px; padding: 14px 16px; border-radius: var(--radius); border: 1px solid var(--line); background: #FFF8E8; font-size: 13.5px; line-height: 1.5; }
+.conn.ok { background: #EEF8F1; }
+.conn b { color: var(--plum); }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
+.seg button { border: 0; background: none; padding: 7px 12px; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.seg button.is-on { background: var(--plum); color: #fff; }
+.dir { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 13px; font-weight: 700; }
+.dir.out { background: var(--plum-tint); color: var(--plum); }
+.dir.in { background: #FFF3D6; color: #8A5A00; }
+.table tr.unread td { font-weight: 700; }
+.table td.subj { max-width: 360px; overflow: hidden; text-overflow: ellipsis; }
+.es-queued, .es-skipped { background: #ECECEF; color: #555; }
+.es-sent { background: #E3F0FA; color: #1D5F8A; }
+.es-delivered { background: #E1F3F1; color: #1C6B63; }
+.es-opened { background: #DFF3E6; color: #1F7A45; }
+.es-clicked { background: #D3F0DC; color: #13612F; }
+.es-delayed { background: #FDE9D9; color: #A04A00; }
+.es-bounced, .es-complained, .es-failed { background: #F7E1E1; color: #9B2C2C; }
+.es-received { background: #FFF3D6; color: #8A5A00; }
+.badge.beta { background: #FFF3D6; color: #8A5A00; }
+.drawer__panel--wide { width: min(100%, 720px); }
+.mail-frame { width: 100%; height: 460px; border: 1px solid var(--line); border-radius: 12px; background: #fff; margin-bottom: 22px; }
+.mail-list { display: grid; gap: 8px; margin-bottom: 22px; }
+.mail-item { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font-size: 13.5px; background: #fff; text-align: left; width: 100%; font-family: inherit; }
+.mail-item:hover { background: var(--bg); }
+.mail-item span.s { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tpl textarea { min-height: 170px; font-family: inherit; }
+.tpl .card__head { gap: 10px; }
+.tpl-head { margin: 16px 0; }
+.tpl-head code, .tpl code { font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 5px; }
+
 .inline-form { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 18px; }
 .inline-form input { flex: 1 1 200px; width: auto; }
 .admin-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 2px; border-top: 1px solid var(--line); }

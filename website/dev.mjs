@@ -32,8 +32,24 @@ function wrapRes(res) {
   return res;
 }
 
+// api/*.mjs files export a Web-standard { fetch(request) } handler, like on Vercel; /api/name/action -> ?action=action.
+async function runFetchHandler([, name, action], url, req, res) {
+  try {
+    const mod = await import(`./api/${name}.mjs?t=${Date.now()}`);
+    if (action) url.searchParams.set('action', action);
+    const chunks = [];
+    for await (const c of req) chunks.push(c);
+    const body = ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks);
+    const response = await mod.default.fetch(new Request(url, { method: req.method, headers: req.headers, body }));
+    res.writeHead(response.status, Object.fromEntries(response.headers));
+    res.end(Buffer.from(await response.arrayBuffer()));
+  } catch (err) { console.error(err); res.writeHead(500); res.end('API error'); }
+}
+
 http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+  const fetchApi = /^\/api\/([\w-]+)(?:\/([\w-]+))?$/.exec(url.pathname);
+  if (fetchApi && existsSync(join(root, 'api', `${fetchApi[1]}.mjs`))) return runFetchHandler(fetchApi, url, req, res);
   const api = /^\/api\/([\w-]+)$/.exec(url.pathname);
   if (api && existsSync(join(root, 'api', `${api[1]}.js`))) {
     const mod = join(root, 'api', `${api[1]}.js`);

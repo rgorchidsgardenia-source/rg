@@ -108,7 +108,7 @@
   }
 
   /* ---------- app shell ---------- */
-  var VIEWS = { dashboard: 'Dashboard', leads: 'All leads', pipeline: 'Pipeline', partners: 'Channel partners', careers: 'Careers', analytics: 'Website analytics', settings: 'Site settings' };
+  var VIEWS = { dashboard: 'Dashboard', leads: 'All leads', pipeline: 'Pipeline', emails: 'Emails', automation: 'Email automation', partners: 'Channel partners', careers: 'Careers', analytics: 'Website analytics', settings: 'Site settings' };
   function route() {
     var v = (location.hash || '#dashboard').slice(1);
     if (!VIEWS[v]) v = 'dashboard';
@@ -118,7 +118,7 @@
     var panel = v === 'partners' || v === 'careers' ? 'leads' : v;
     $$('.view').forEach(function (s) { s.hidden = s.id !== 'view-' + panel; });
     $('#app').classList.remove('nav-open');
-    $('#range').hidden = v === 'settings';
+    $('#range').hidden = v === 'settings' || v === 'automation';
     if (panel === 'leads') {
       var typeSel = $('#fType');
       typeSel.hidden = v !== 'leads';
@@ -132,6 +132,8 @@
     if (state.view === 'analytics') return loadDashboard();
     if (state.view === 'pipeline') return loadBoard();
     if (state.view === 'settings') return loadSettings();
+    if (state.view === 'emails') return loadEmails();
+    if (state.view === 'automation') return loadAutomation();
     return loadLeads();
   }
 
@@ -152,6 +154,7 @@
     $('#exportBtn').addEventListener('click', exportCsv);
     $$('[data-filter-followup]').forEach(function (a) { a.addEventListener('click', function () { $('#fDue').checked = true; }); });
     $('#settingsForm').addEventListener('submit', saveSettings);
+    bindEmails();
     route();
     pollNew();
     setInterval(pollNew, 60000);
@@ -168,6 +171,13 @@
         if (state.view !== 'analytics') load();
       }
       state.lastNew = n;
+    });
+    sb.from('email_messages').select('id', { count: 'exact', head: true }).eq('direction', 'in').is('read_at', null).then(function (r) {
+      if (r.error) return;
+      var n = r.count || 0; var pill = $('#replyCount');
+      pill.hidden = !n; pill.textContent = n;
+      if (state.lastReplies !== undefined && n > state.lastReplies) { toast('New email reply received'); if (state.view === 'emails') loadEmails(); }
+      state.lastReplies = n;
     });
   }
 
@@ -349,7 +359,9 @@
       return '<dt>' + d[1] + '</dt><dd>' + html + '</dd>';
     }).join('') || '<dt>Details</dt><dd>Only name and phone were shared.</dd>';
     $('#noteText').value = '';
+    $('#dMail').hidden = !r.email;
     loadTimeline();
+    loadLeadEmails();
     drawer.classList.add('is-open'); drawer.setAttribute('aria-hidden', 'false');
   }
 
@@ -445,6 +457,240 @@
         });
       });
     }).catch(fail);
+  }
+
+  /* ---------- emails (Resend) ---------- */
+  var MAIL_STATUS = { queued: 'Queued', skipped: 'Not sent', sent: 'Sent', delivered: 'Delivered', delayed: 'Delayed', opened: 'Opened',
+    clicked: 'Clicked', bounced: 'Bounced', complained: 'Spam complaint', failed: 'Failed', received: 'Received' };
+  var MAIL_KIND = { auto_reply: 'Auto-reply', team_alert: 'Team alert', manual: 'Sent by team', reply: 'Reply' };
+  var mail = { box: '', page: 0, rows: [], current: null };
+  function mailBadge(s) { return '<span class="badge es-' + esc(s) + '">' + esc(MAIL_STATUS[s] || s) + '</span>'; }
+  function longDate(iso) { return iso ? new Date(iso).toLocaleString('en-IN', Object.assign({ dateStyle: 'medium', timeStyle: 'short' }, tz)) : ''; }
+  function shortAddr(a) { var m = /<([^>]+)>/.exec(a || ''); return m ? m[1] : (a || ''); }
+
+  function api(path, opts) {
+    return sb.auth.getSession().then(function (r) {
+      var token = r.data && r.data.session && r.data.session.access_token;
+      opts = opts || {};
+      opts.headers = Object.assign({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, opts.headers || {});
+      return fetch(path, opts).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          if (!res.ok || body.ok === false) throw new Error(body.error || 'Request failed (' + res.status + ')');
+          return body;
+        });
+      });
+    });
+  }
+
+  function showConnection(el) {
+    api('/api/email/status').then(function (st) {
+      el.hidden = false;
+      if (st.resend && (st.webhook_signing || st.hook_secret)) {
+        el.className = 'conn ok';
+        el.innerHTML = '<div><b>Resend is connected.</b> Every form with an email address gets a personalised reply, and delivery, opens, clicks and replies show up here.' +
+          (st.webhook_signing ? '' : ' Add the webhook signing secret for signed delivery updates.') + '</div>';
+      } else {
+        el.className = 'conn';
+        el.innerHTML = '<div><b>Beta: Resend is not connected yet.</b> The automation is running, so each new form submission is logged here as <em>Not sent</em>. ' +
+          'Once the Resend API key is added on the server, the same emails go out for real. Webhook URL for Resend: <code>' + esc(st.webhook_url) + '</code></div>';
+      }
+    }).catch(function () { el.hidden = true; });
+  }
+
+  function emailQuery() {
+    var q = sb.from('email_messages').select('id,created_at,direction,kind,status,from_email,to_email,subject,lead_source,lead_id,read_at,error', { count: 'exact' })
+      .gte('created_at', rangeFrom()).order('created_at', { ascending: false });
+    var box = mail.box;
+    if (box === 'in' || box === 'out') q = q.eq('direction', box);
+    else if (box === 'problems') q = q.in('status', ['bounced', 'complained', 'failed', 'delayed', 'skipped']);
+    else if (box) q = q.eq('kind', box);
+    var term = $('#eq').value.trim().replace(/[,()%]/g, ' ');
+    if (term) q = q.or('to_email.ilike.%' + term + '%,from_email.ilike.%' + term + '%,subject.ilike.%' + term + '%');
+    return q;
+  }
+
+  function loadEmails() {
+    showConnection($('#emailConn'));
+    sb.from('email_messages').select('direction,kind,status,opened_at,clicked_at,delivered_at').gte('created_at', rangeFrom()).limit(5000).then(function (res) {
+      if (res.error) throw res.error;
+      var out = res.data.filter(function (m) { return m.direction === 'out'; });
+      var real = out.filter(function (m) { return m.status !== 'skipped'; });
+      var count = function (f) { return out.filter(f).length; };
+      var k = [
+        ['Emails sent', real.length, out.length - real.length ? (out.length - real.length) + ' not sent' : ''],
+        ['Delivered', count(function (m) { return m.delivered_at || ['delivered', 'opened', 'clicked'].indexOf(m.status) >= 0; }), ''],
+        ['Opened', count(function (m) { return m.opened_at || m.status === 'opened' || m.status === 'clicked'; }), real.length ? Math.round(count(function (m) { return m.opened_at || m.status === 'opened' || m.status === 'clicked'; }) / real.length * 100) + '% open rate' : ''],
+        ['Clicked', count(function (m) { return m.clicked_at || m.status === 'clicked'; }), ''],
+        ['Replies', res.data.filter(function (m) { return m.direction === 'in'; }).length, ''],
+        ['Problems', count(function (m) { return ['bounced', 'complained', 'failed'].indexOf(m.status) >= 0; }), 'bounced or failed']
+      ];
+      $('#eKpis').innerHTML = k.map(function (x) { return '<div class="kpi"><span>' + x[0] + '</span><strong>' + x[1].toLocaleString('en-IN') + '</strong><small>' + esc(x[2]) + '</small></div>'; }).join('');
+    }).catch(fail);
+    emailQuery().range(mail.page * PAGE, mail.page * PAGE + PAGE - 1).then(function (res) {
+      if (res.error) throw res.error;
+      mail.rows = res.data;
+      $('#eRows').innerHTML = res.data.length ? res.data.map(function (m, i) {
+        var who = m.direction === 'in' ? m.from_email : m.to_email;
+        return '<tr data-i="' + i + '" class="' + (m.direction === 'in' && !m.read_at ? 'unread' : '') + '"><td>' + esc(ago(m.created_at)) + '</td>' +
+          '<td><span class="dir ' + m.direction + '" title="' + (m.direction === 'in' ? 'Received' : 'Sent') + '">' + (m.direction === 'in' ? '&#8601;' : '&#8599;') + '</span></td>' +
+          '<td>' + esc(shortAddr(who)) + '</td><td class="subj">' + esc(m.subject || '(no subject)') + '</td><td>' + esc(MAIL_KIND[m.kind] || m.kind) + '</td><td>' + mailBadge(m.status) + '</td></tr>';
+      }).join('') : '<tr><td colspan="6"><div class="empty">No emails in this period yet</div></td></tr>';
+      var total = res.count || 0;
+      $('#ePageInfo').textContent = total ? (mail.page * PAGE + 1) + '–' + Math.min(total, mail.page * PAGE + PAGE) + ' of ' + total.toLocaleString('en-IN') : '';
+      $('#ePrev').disabled = mail.page === 0; $('#eNext').disabled = (mail.page + 1) * PAGE >= total;
+      $$('#eRows tr[data-i]').forEach(function (tr) { tr.addEventListener('click', function () { openEmail(mail.rows[Number(tr.dataset.i)].id); }); });
+    }).catch(fail);
+  }
+
+  var mailDrawer = $('#mailDrawer'); var compose = $('#compose');
+  function closeMail() { mailDrawer.classList.remove('is-open'); mailDrawer.setAttribute('aria-hidden', 'true'); }
+  function closeCompose() { compose.classList.remove('is-open'); compose.setAttribute('aria-hidden', 'true'); }
+
+  function openEmail(id) {
+    sb.from('email_messages').select('*').eq('id', id).single().then(function (res) {
+      if (res.error) throw res.error;
+      var m = res.data; mail.current = m;
+      $('#mTitle').textContent = m.subject || '(no subject)';
+      $('#mSub').innerHTML = (m.direction === 'in' ? 'Reply received ' : (MAIL_KIND[m.kind] || 'Email') + ' · ') + esc(longDate(m.created_at)) + ' · ' + mailBadge(m.status);
+      var rows = [['From', m.from_email], ['To', m.to_email], ['Reply-to', m.reply_to], ['Sent by', m.sent_by], ['Template', m.template_key],
+        ['Delivered', longDate(m.delivered_at)], ['First opened', longDate(m.opened_at)], ['First click', longDate(m.clicked_at)], ['Problem', m.error]];
+      var att = (m.meta && m.meta.attachments) || [];
+      if (att.length) rows.push(['Attachments', att.map(function (a) { return a.filename; }).join(', ')]);
+      $('#mDetails').innerHTML = rows.filter(function (r) { return r[1]; }).map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
+      var frame = $('#mFrame');
+      frame.srcdoc = m.html || ('<pre style="font:14px/1.6 Arial,sans-serif;white-space:pre-wrap;margin:16px">' + esc(m.text_body || '') + '</pre>');
+      var quick = '';
+      if (m.lead_id) quick += '<button class="btn btn--ghost btn--sm" type="button" id="mLead">Open lead</button>';
+      if (m.direction === 'in') quick += '<button class="btn btn--sm" type="button" id="mReply">Reply</button>';
+      else if (m.status === 'skipped' || m.status === 'failed') quick += '<button class="btn btn--sm" type="button" id="mResend">Send again</button>';
+      $('#mQuick').innerHTML = quick;
+      if ($('#mLead')) $('#mLead').addEventListener('click', function () {
+        sb.from('inbox').select('*').eq('id', m.lead_id).single().then(function (r) { if (r.error) throw r.error; closeMail(); openLead(r.data); }).catch(fail);
+      });
+      if ($('#mReply')) $('#mReply').addEventListener('click', function () {
+        openCompose({ to: m.from_email, subject: /^re:/i.test(m.subject || '') ? m.subject : 'Re: ' + (m.subject || ''), lead_source: m.lead_source, lead_id: m.lead_id, in_reply_to: m.message_id,
+          body: '\n\n\nOn ' + longDate(m.created_at) + ', ' + m.from_email + ' wrote:\n> ' + String(m.text_body || '').trim().split('\n').slice(0, 30).join('\n> ') });
+      });
+      if ($('#mResend')) $('#mResend').addEventListener('click', function () {
+        openCompose({ to: m.to_email, subject: m.subject, lead_source: m.lead_source, lead_id: m.lead_id, body: String(m.text_body || '') });
+      });
+      sb.from('email_events').select('*').eq('message_id', m.id).order('created_at', { ascending: false }).then(function (ev) {
+        if (ev.error) throw ev.error;
+        var items = ev.data.map(function (e) {
+          var label = MAIL_STATUS[(e.type || '').replace('email.', '').replace('delivery_delayed', 'delayed')] || e.type;
+          var extra = e.payload && e.payload.click && e.payload.click.link ? ' · ' + e.payload.click.link : '';
+          return '<li><div class="meta">' + esc(longDate(e.created_at)) + '</div><p>' + esc(label + extra) + '</p></li>';
+        });
+        items.push('<li><div class="meta">' + esc(longDate(m.created_at)) + '</div><p>' + (m.direction === 'in' ? 'Received' : m.status === 'skipped' ? 'Logged, not sent: ' + esc(m.error || '') : 'Handed to Resend') + '</p></li>');
+        $('#mTimeline').innerHTML = items.join('');
+      }).catch(fail);
+      mailDrawer.classList.add('is-open'); mailDrawer.setAttribute('aria-hidden', 'false');
+      if (m.direction === 'in' && !m.read_at) {
+        sb.from('email_messages').update({ read_at: new Date().toISOString() }).eq('id', m.id).then(function () { pollNew(); if (state.view === 'emails') loadEmails(); });
+      }
+    }).catch(fail);
+  }
+
+  function openCompose(v) {
+    v = v || {};
+    var f = $('#composeForm');
+    ['to', 'subject', 'body', 'lead_source', 'lead_id', 'in_reply_to'].forEach(function (k) { f.elements[k].value = v[k] || ''; });
+    $('#cTitle').textContent = v.in_reply_to ? 'Reply' : 'New email';
+    closeMail();
+    compose.classList.add('is-open'); compose.setAttribute('aria-hidden', 'false');
+    setTimeout(function () { (v.to ? f.elements[v.subject ? 'body' : 'subject'] : f.elements.to).focus(); }, 50);
+  }
+
+  function sendEmail(e) {
+    e.preventDefault();
+    var f = e.target; if (!f.reportValidity()) return;
+    var btn = $('button[type=submit]', f); btn.disabled = true;
+    var payload = {}; ['to', 'subject', 'body', 'lead_source', 'lead_id', 'in_reply_to'].forEach(function (k) { payload[k] = f.elements[k].value.trim() || null; });
+    api('/api/email/send', { method: 'POST', body: JSON.stringify(payload) }).then(function (r) {
+      closeCompose();
+      toast(r.skipped ? 'Saved in Emails as "Not sent": Resend is not connected yet' : 'Email sent');
+      if (state.view === 'emails') loadEmails();
+      if (state.current && payload.lead_id === state.current.id) loadLeadEmails();
+    }).catch(fail).then(function () { btn.disabled = false; });
+  }
+
+  function loadLeadEmails() {
+    var r = state.current; var box = $('#dEmails');
+    var q = sb.from('email_messages').select('id,created_at,direction,kind,status,subject').order('created_at', { ascending: false }).limit(20);
+    q = r.email ? q.or('lead_id.eq.' + r.id + ',to_email.ilike.' + r.email.replace(/[,()]/g, '') + ',from_email.ilike.' + r.email.replace(/[,()]/g, '')) : q.eq('lead_id', r.id);
+    q.then(function (res) {
+      if (res.error) throw res.error;
+      box.innerHTML = res.data.length ? res.data.map(function (m) {
+        return '<button type="button" class="mail-item" data-mail="' + m.id + '"><span class="dir ' + m.direction + '">' + (m.direction === 'in' ? '&#8601;' : '&#8599;') + '</span>' +
+          '<span class="s">' + esc(m.subject || '(no subject)') + '</span>' + mailBadge(m.status) + '<span class="muted small">' + esc(ago(m.created_at)) + '</span></button>';
+      }).join('') : '<p class="muted small">' + (r.email ? 'No emails yet.' : 'No email address on this lead.') + '</p>';
+      $$('[data-mail]', box).forEach(function (b) { b.addEventListener('click', function () { closeDrawer(); openEmail(b.dataset.mail); }); });
+    }).catch(fail);
+  }
+
+  /* ---------- email automation settings ---------- */
+  function loadAutomation() {
+    showConnection($('#autoConn'));
+    sb.from('email_settings').select('*').eq('id', 1).single().then(function (res) {
+      if (res.error) throw res.error;
+      var f = $('#mailSettings'); var d = res.data;
+      f.enabled.checked = d.enabled; ['from_name', 'from_email', 'reply_to', 'notify_to', 'signature'].forEach(function (k) { f.elements[k].value = d[k] || ''; });
+      $('#mailMeta').textContent = d.updated_by ? 'Last changed ' + longDate(d.updated_at) + ' by ' + d.updated_by : '';
+    }).catch(fail);
+    sb.from('email_templates').select('*').order('key').then(function (res) {
+      if (res.error) throw res.error;
+      var order = ['callback', 'project', 'landing', 'contact', 'channel_partner', 'cp_lead', 'career', 'team_alert'];
+      res.data.sort(function (a, b) { return order.indexOf(a.key) - order.indexOf(b.key); });
+      $('#templates').innerHTML = res.data.map(function (t) {
+        return '<form class="card tpl" data-key="' + esc(t.key) + '"><div class="card__head"><h2>' + esc(t.label) + '</h2>' +
+          '<label class="chk"><input type="checkbox" name="enabled"' + (t.enabled ? ' checked' : '') + '> On</label></div>' +
+          '<label class="fld"><span>Subject</span><input name="subject" maxlength="200" required value="' + esc(t.subject) + '"></label>' +
+          '<label class="fld"><span>Message</span><textarea name="body" maxlength="5000" required>' + esc(t.body) + '</textarea></label>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="muted small">' + (t.updated_by ? 'Edited ' + esc(ago(t.updated_at)) + ' by ' + esc(t.updated_by) : 'Default text') + '</span>' +
+          '<button class="btn btn--sm" type="submit">Save template</button></div></form>';
+      }).join('');
+      $$('#templates form').forEach(function (f) { f.addEventListener('submit', saveTemplate); });
+    }).catch(fail);
+  }
+
+  function saveMailSettings(e) {
+    e.preventDefault();
+    var f = e.target; if (!f.reportValidity()) return;
+    var notify = f.notify_to.value.split(/[,\s]+/).filter(Boolean);
+    if (notify.some(function (x) { return !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(x); })) { toast('Check the team alert email addresses'); return; }
+    var row = { enabled: f.enabled.checked, from_name: f.from_name.value.trim(), from_email: f.from_email.value.trim().toLowerCase(), reply_to: f.reply_to.value.trim().toLowerCase(),
+      notify_to: notify.join(', '), signature: f.signature.value.trim(), updated_at: new Date().toISOString(), updated_by: state.user.email };
+    sb.from('email_settings').update(row).eq('id', 1).then(function (res) { if (res.error) throw res.error; toast('Email settings saved'); loadAutomation(); }).catch(fail);
+  }
+
+  function saveTemplate(e) {
+    e.preventDefault();
+    var f = e.target; if (!f.reportValidity()) return;
+    sb.from('email_templates').update({ enabled: f.enabled.checked, subject: f.subject.value.trim(), body: f.body.value.trim(), updated_at: new Date().toISOString(), updated_by: state.user.email })
+      .eq('key', f.dataset.key).then(function (res) { if (res.error) throw res.error; toast('Template saved'); }).catch(fail);
+  }
+
+  function bindEmails() {
+    $$('#eBox button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        $$('#eBox button').forEach(function (x) { x.classList.toggle('is-on', x === b); });
+        mail.box = b.dataset.box; mail.page = 0; loadEmails();
+      });
+    });
+    var t; $('#eq').addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { mail.page = 0; loadEmails(); }, 300); });
+    $('#ePrev').addEventListener('click', function () { if (mail.page > 0) { mail.page--; loadEmails(); } });
+    $('#eNext').addEventListener('click', function () { mail.page++; loadEmails(); });
+    $('#composeBtn').addEventListener('click', function () { openCompose(); });
+    $('#composeForm').addEventListener('submit', sendEmail);
+    $('#mailSettings').addEventListener('submit', saveMailSettings);
+    $('#dMail').addEventListener('click', function () {
+      var r = state.current; if (!r || !r.email) return;
+      closeDrawer();
+      openCompose({ to: r.email, subject: (r.project || 'RG Unique Structures') + ': your enquiry', lead_source: r.source, lead_id: r.id, body: 'Hi ' + String(r.name || '').split(' ')[0] + ',\n\n' });
+    });
+    $$('[data-close-mail]').forEach(function (b) { b.addEventListener('click', closeMail); });
+    $$('[data-close-compose]').forEach(function (b) { b.addEventListener('click', closeCompose); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeMail(); closeCompose(); } });
   }
 
   /* ---------- site settings ---------- */

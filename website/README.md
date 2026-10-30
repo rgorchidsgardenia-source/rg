@@ -78,6 +78,32 @@ confirmation and password-reset links land on the admin page. Supabase's built-i
 few emails an hour (and only to project team members); add custom SMTP (Authentication > Emails) before
 inviting several staff.
 
+## Email automation (Resend, beta)
+
+Every form that includes an email address gets a personalised reply, the sales team can get a new-lead alert, and
+replies come back into the admin. Database side: `supabase/email.sql` (tables `email_messages`, `email_events`,
+`email_templates`, `email_settings`, the `email_server()` function and the new-lead trigger). Server side: `api/email.mjs`.
+
+- A new row in `enquiries` (website) or `leads` (landing page) triggers a call to `/api/email/lead` through `pg_net`,
+  so forms never wait for email. The function picks the template for that form, fills in the person's details, sends it
+  through Resend, and logs it. Until `RESEND_API_KEY` is set, emails are logged as "Not sent" so the flow can be checked.
+- `/api/email/webhook` takes Resend's webhooks: sent, delivered, delayed, opened, clicked, bounced, complained, failed
+  and `email.received` (replies), and updates the admin.
+- Admin: **Emails** (all / replies / sent / auto-replies / team alerts / problems, open and click tracking, reply from
+  the dashboard, and an email list on each lead) and **Email automation** (on/off, sender, reply-to, team alert
+  addresses, signature and every template).
+
+Going live with Resend:
+1. Resend > Domains: add `rgstructures.in` and add the DNS records it shows in Vercel DNS (they don't touch the
+   existing Naivedayam mail records).
+2. Vercel env vars on `rg-unique-structures`: `RESEND_API_KEY`; `EMAIL_HOOK_SECRET` is already set (same value as
+   `private.config` in Supabase).
+3. Resend > Webhooks: endpoint `https://rgstructures.in/api/email/webhook`, all email events; put its signing secret in
+   `RESEND_WEBHOOK_SECRET`.
+4. Replies: in Resend > Receiving, add a receiving domain such as `reply.rgstructures.in` (MX record in Vercel DNS)
+   and set that address as "Replies go to" under Email automation.
+5. Redeploy (`vercel deploy --prod`).
+
 ## Films
 
 The RG Orchids Gardenia page plays the project film and model-flat walkthrough from the landing page project
