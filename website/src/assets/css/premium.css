@@ -41,6 +41,9 @@ html:not(.first-visit) .curtain { display: none; }
 .vhero__price small { display: block; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
 .vhero__price strong { display: block; font-family: var(--serif); font-weight: 400; font-size: clamp(38px, 4vw, 56px); line-height: 1.05; color: var(--gold-2); }
 .vhero__price span { font-size: 14px; color: rgba(255, 255, 255, .8); }
+.vhero__link { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 14px; font-weight: 600; color: var(--gold-2); }
+.vhero__link svg { width: 16px; height: 16px; transition: transform .3s; }
+.vhero__link:hover svg { transform: translateX(4px); }
 .vhero__facts { display: flex; flex-wrap: wrap; gap: 14px 40px; margin-top: 40px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, .18); font-size: 14px; color: rgba(255, 255, 255, .72); }
 .vhero__facts b { display: block; font-family: var(--serif); font-weight: 400; font-size: 26px; color: #fff; }
 .scroll-cue { position: absolute; right: var(--gutter); bottom: 120px; display: grid; justify-items: center; gap: 12px; font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: rgba(255, 255, 255, .7); writing-mode: vertical-rl; }

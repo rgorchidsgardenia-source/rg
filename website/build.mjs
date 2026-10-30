@@ -109,7 +109,7 @@ const helpers = {
     return items.map(([href, label]) => {
       const current = page.path === href || (page.section && page.section === href);
       return `<a href="${href}"${current ? ' aria-current="page"' : ''}>${label}</a>`;
-    }).join('');
+    }).join('') + '<a class="nav__feature" href="/landingpage/">RG Orchids Gardenia</a>';
   }
 };
 
