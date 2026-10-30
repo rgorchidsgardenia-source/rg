@@ -255,7 +255,7 @@ begin
 end;
 $$;
 revoke all on function public.email_server(text, text, jsonb) from public;
-grant execute on function public.email_server(text, text, jsonb) to anon, authenticated;
+grant execute on function public.email_server(text, text, jsonb) to anon; -- secret-gated, called by the server only
 
 -- ---------- New lead -> /api/email/lead (asynchronous, never blocks the form) ----------
 create or replace function public.email_on_new_lead()
