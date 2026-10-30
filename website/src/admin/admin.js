@@ -465,6 +465,12 @@
   var MAIL_KIND = { auto_reply: 'Auto-reply', team_alert: 'Team alert', manual: 'Sent by team', reply: 'Reply' };
   var mail = { box: '', page: 0, rows: [], current: null };
   function mailBadge(s) { return '<span class="badge es-' + esc(s) + '">' + esc(MAIL_STATUS[s] || s) + '</span>'; }
+  // Emails we sent to a person (not team alerts): did they write back?
+  function awaitsReply(m) { return m.direction === 'out' && m.kind !== 'team_alert' && ['queued', 'skipped', 'failed', 'bounced', 'complained'].indexOf(m.status) < 0; }
+  function replyBadge(m) {
+    if (!awaitsReply(m)) return '';
+    return m.replied_at ? ' <span class="badge es-replied">Replied</span>' : ' <span class="badge es-noreply">No reply</span>';
+  }
   function longDate(iso) { return iso ? new Date(iso).toLocaleString('en-IN', Object.assign({ dateStyle: 'medium', timeStyle: 'short' }, tz)) : ''; }
   function shortAddr(a) { var m = /<([^>]+)>/.exec(a || ''); return m ? m[1] : (a || ''); }
 
@@ -498,11 +504,12 @@
   }
 
   function emailQuery() {
-    var q = sb.from('email_messages').select('id,created_at,direction,kind,status,from_email,to_email,subject,lead_source,lead_id,read_at,error', { count: 'exact' })
+    var q = sb.from('email_messages').select('id,created_at,direction,kind,status,from_email,to_email,subject,lead_source,lead_id,read_at,replied_at,error', { count: 'exact' })
       .gte('created_at', rangeFrom()).order('created_at', { ascending: false });
     var box = mail.box;
     if (box === 'in' || box === 'out') q = q.eq('direction', box);
     else if (box === 'problems') q = q.in('status', ['bounced', 'complained', 'failed', 'delayed', 'skipped']);
+    else if (box === 'noreply') q = q.eq('direction', 'out').neq('kind', 'team_alert').is('replied_at', null).not('status', 'in', '(queued,skipped,failed,bounced,complained)');
     else if (box) q = q.eq('kind', box);
     var term = $('#eq').value.trim().replace(/[,()%]/g, ' ');
     if (term) q = q.or('to_email.ilike.%' + term + '%,from_email.ilike.%' + term + '%,subject.ilike.%' + term + '%');
@@ -511,7 +518,7 @@
 
   function loadEmails() {
     showConnection($('#emailConn'));
-    sb.from('email_messages').select('direction,kind,status,opened_at,clicked_at,delivered_at').gte('created_at', rangeFrom()).limit(5000).then(function (res) {
+    sb.from('email_messages').select('direction,kind,status,opened_at,clicked_at,delivered_at,replied_at').gte('created_at', rangeFrom()).limit(5000).then(function (res) {
       if (res.error) throw res.error;
       var out = res.data.filter(function (m) { return m.direction === 'out'; });
       var real = out.filter(function (m) { return m.status !== 'skipped'; });
@@ -521,7 +528,10 @@
         ['Delivered', count(function (m) { return m.delivered_at || ['delivered', 'opened', 'clicked'].indexOf(m.status) >= 0; }), ''],
         ['Opened', count(function (m) { return m.opened_at || m.status === 'opened' || m.status === 'clicked'; }), real.length ? Math.round(count(function (m) { return m.opened_at || m.status === 'opened' || m.status === 'clicked'; }) / real.length * 100) + '% open rate' : ''],
         ['Clicked', count(function (m) { return m.clicked_at || m.status === 'clicked'; }), ''],
-        ['Replies', res.data.filter(function (m) { return m.direction === 'in'; }).length, ''],
+        ['Replied', count(function (m) { return awaitsReply(m) && m.replied_at; }), (function () {
+          var asked = count(awaitsReply), got = count(function (m) { return awaitsReply(m) && m.replied_at; });
+          return asked ? Math.round(got / asked * 100) + '% reply rate · ' + (asked - got) + ' no reply' : '';
+        })()],
         ['Problems', count(function (m) { return ['bounced', 'complained', 'failed'].indexOf(m.status) >= 0; }), 'bounced or failed']
       ];
       $('#eKpis').innerHTML = k.map(function (x) { return '<div class="kpi"><span>' + x[0] + '</span><strong>' + x[1].toLocaleString('en-IN') + '</strong><small>' + esc(x[2]) + '</small></div>'; }).join('');
@@ -533,7 +543,7 @@
         var who = m.direction === 'in' ? m.from_email : m.to_email;
         return '<tr data-i="' + i + '" class="' + (m.direction === 'in' && !m.read_at ? 'unread' : '') + '"><td>' + esc(ago(m.created_at)) + '</td>' +
           '<td><span class="dir ' + m.direction + '" title="' + (m.direction === 'in' ? 'Received' : 'Sent') + '">' + (m.direction === 'in' ? '&#8601;' : '&#8599;') + '</span></td>' +
-          '<td>' + esc(shortAddr(who)) + '</td><td class="subj">' + esc(m.subject || '(no subject)') + '</td><td>' + esc(MAIL_KIND[m.kind] || m.kind) + '</td><td>' + mailBadge(m.status) + '</td></tr>';
+          '<td>' + esc(shortAddr(who)) + '</td><td class="subj">' + esc(m.subject || '(no subject)') + '</td><td>' + esc(MAIL_KIND[m.kind] || m.kind) + '</td><td>' + mailBadge(m.status) + replyBadge(m) + '</td></tr>';
       }).join('') : '<tr><td colspan="6"><div class="empty">No emails in this period yet</div></td></tr>';
       var total = res.count || 0;
       $('#ePageInfo').textContent = total ? (mail.page * PAGE + 1) + '–' + Math.min(total, mail.page * PAGE + PAGE) + ' of ' + total.toLocaleString('en-IN') : '';
@@ -551,9 +561,9 @@
       if (res.error) throw res.error;
       var m = res.data; mail.current = m;
       $('#mTitle').textContent = m.subject || '(no subject)';
-      $('#mSub').innerHTML = (m.direction === 'in' ? 'Reply received ' : (MAIL_KIND[m.kind] || 'Email') + ' · ') + esc(longDate(m.created_at)) + ' · ' + mailBadge(m.status);
+      $('#mSub').innerHTML = (m.direction === 'in' ? 'Reply received ' : (MAIL_KIND[m.kind] || 'Email') + ' · ') + esc(longDate(m.created_at)) + ' · ' + mailBadge(m.status) + replyBadge(m);
       var rows = [['From', m.from_email], ['To', m.to_email], ['Reply-to', m.reply_to], ['Sent by', m.sent_by], ['Template', m.template_key],
-        ['Delivered', longDate(m.delivered_at)], ['First opened', longDate(m.opened_at)], ['First click', longDate(m.clicked_at)], ['Problem', m.error]];
+        ['Delivered', longDate(m.delivered_at)], ['First opened', longDate(m.opened_at)], ['First click', longDate(m.clicked_at)], ['Replied', longDate(m.replied_at)], ['Problem', m.error]];
       var att = (m.meta && m.meta.attachments) || [];
       if (att.length) rows.push(['Attachments', att.map(function (a) { return a.filename; }).join(', ')]);
       $('#mDetails').innerHTML = rows.filter(function (r) { return r[1]; }).map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
@@ -616,13 +626,13 @@
 
   function loadLeadEmails() {
     var r = state.current; var box = $('#dEmails');
-    var q = sb.from('email_messages').select('id,created_at,direction,kind,status,subject').order('created_at', { ascending: false }).limit(20);
+    var q = sb.from('email_messages').select('id,created_at,direction,kind,status,subject,replied_at').order('created_at', { ascending: false }).limit(20);
     q = r.email ? q.or('lead_id.eq.' + r.id + ',to_email.ilike.' + r.email.replace(/[,()]/g, '') + ',from_email.ilike.' + r.email.replace(/[,()]/g, '')) : q.eq('lead_id', r.id);
     q.then(function (res) {
       if (res.error) throw res.error;
       box.innerHTML = res.data.length ? res.data.map(function (m) {
         return '<button type="button" class="mail-item" data-mail="' + m.id + '"><span class="dir ' + m.direction + '">' + (m.direction === 'in' ? '&#8601;' : '&#8599;') + '</span>' +
-          '<span class="s">' + esc(m.subject || '(no subject)') + '</span>' + mailBadge(m.status) + '<span class="muted small">' + esc(ago(m.created_at)) + '</span></button>';
+          '<span class="s">' + esc(m.subject || '(no subject)') + '</span>' + mailBadge(m.status) + replyBadge(m) + '<span class="muted small">' + esc(ago(m.created_at)) + '</span></button>';
       }).join('') : '<p class="muted small">' + (r.email ? 'No emails yet.' : 'No email address on this lead.') + '</p>';
       $$('[data-mail]', box).forEach(function (b) { b.addEventListener('click', function () { closeDrawer(); openEmail(b.dataset.mail); }); });
     }).catch(fail);

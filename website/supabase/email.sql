@@ -128,11 +128,14 @@ create table if not exists public.email_messages (
   delivered_at  timestamptz,
   opened_at     timestamptz,
   clicked_at    timestamptz,
+  replied_at    timestamptz, -- outgoing only: first reply from the recipient
   read_at       timestamptz,
   meta          jsonb not null default '{}'::jsonb
 );
 create index if not exists email_messages_created_idx on public.email_messages (created_at desc);
 create index if not exists email_messages_lead_idx on public.email_messages (lead_id, created_at);
+alter table public.email_messages add column if not exists replied_at timestamptz;
+create index if not exists email_messages_out_to_idx on public.email_messages (lower(to_email)) where direction = 'out';
 create index if not exists email_messages_to_idx on public.email_messages (lower(to_email));
 create index if not exists email_messages_from_idx on public.email_messages (lower(from_email));
 
@@ -248,6 +251,9 @@ begin
     values ('in', 'reply', 'received', p_data ->> 'resend_id', p_data ->> 'message_id', p_data ->> 'from_email', p_data ->> 'to_email',
       left(p_data ->> 'subject', 300), p_data ->> 'html', p_data ->> 'text_body', v_src, v_lead_id, coalesce(p_data -> 'meta', '{}'::jsonb))
     returning id into v_id;
+    -- Mark what we sent this person as replied, so the admin can see who answered and who did not.
+    update public.email_messages set replied_at = now()
+      where direction = 'out' and kind <> 'team_alert' and replied_at is null and lower(to_email) = lower(p_data ->> 'from_email');
     return jsonb_build_object('id', v_id, 'lead_id', v_lead_id);
   end if;
 
